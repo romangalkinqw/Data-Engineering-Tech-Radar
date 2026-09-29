@@ -4,7 +4,7 @@
 
 A pet project for tracking the activity of open-source data engineering technologies.
 
-The project will ingest public GitHub events from GH Archive, store historical data in a lakehouse, transform it into analytical data marts, and visualize technology trends in Tableau.
+The project ingests public GitHub events from GH Archive, stores historical data in a lakehouse, transforms it into analytical data marts, and visualizes technology trends in Tableau.
 
 ## Goal
 
@@ -12,10 +12,15 @@ Identify which data engineering technologies are gaining or losing momentum base
 
 ## Current functionality
 
-The first pipeline stage downloads one hourly [GH Archive](https://www.gharchive.org/) file into the local raw data zone.
+The pipeline downloads one hourly GH Archive file into the local Raw zone and loads its events into an Apache Iceberg Bronze table.
 
 ```text
-GH Archive → HTTP streaming → temporary .part file → atomic rename → partitioned raw file
+GH Archive
+  → HTTP streaming
+  → partitioned Raw .json.gz
+  → streaming parser
+  → bounded PyArrow batches
+  → Apache Iceberg Bronze table
 ```
 
 ## Quick start
@@ -45,4 +50,16 @@ Result:
 data/raw/gharchive/archive_date=2015-01-01/archive_hour=15/2015-01-01-15.json.gz
 ```
 
-`--hour` must specify an exact timezone-aware hour. `Z` means UTC. Existing raw files are not downloaded again. The local `data/` directory is excluded from Git.
+`--hour` must specify an exact timezone-aware hour. `Z` means UTC. Existing Raw files are not downloaded again. The local `data/` directory is excluded from Git.
+
+Load the downloaded archive into the local Iceberg Bronze table:
+
+```bash
+uv run de-tech-radar load-gharchive-bronze \
+  --archive-path data/raw/gharchive/archive_date=2015-01-01/archive_hour=15/2015-01-01-15.json.gz \
+  --hour 2015-01-01T15:00:00Z
+```
+
+The local development lakehouse uses a SQLite catalog at `data/lakehouse/catalog.db` and stores Iceberg metadata and Parquet files under `data/lakehouse/warehouse`.
+
+The command prints the number of written events. Successfully committed source files are recorded in Iceberg snapshot metadata, so retrying the same archive returns `0`. All batches belonging to one archive are published atomically.

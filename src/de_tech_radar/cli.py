@@ -7,6 +7,14 @@ from typing import cast
 import httpx
 
 from de_tech_radar.ingestion.gharchive import download_archive
+from de_tech_radar.lakehouse.catalog import open_local_catalog
+from de_tech_radar.lakehouse.tables import (
+    ensure_bronze_events_table,
+)
+from de_tech_radar.pipelines.gharchive_bronze import (
+    DEFAULT_BATCH_SIZE,
+    load_archive_to_bronze,
+)
 
 
 def parse_args(
@@ -34,13 +42,49 @@ def parse_args(
         help="Root directory of the raw data zone",
     )
 
+    load_bronze_parser = subparsers.add_parser(
+        "load-gharchive-bronze",
+        help="Load one raw GH Archive file into Iceberg Bronze",
+    )
+    load_bronze_parser.add_argument(
+        "--archive-path",
+        type=Path,
+        required=True,
+        help="Path to an hourly GH Archive .json.gz file",
+    )
+    load_bronze_parser.add_argument(
+        "--hour",
+        dest="archive_hour",
+        type=_parse_archive_hour,
+        required=True,
+        help="UTC hour in ISO 8601 format",
+    )
+    load_bronze_parser.add_argument(
+        "--catalog-path",
+        type=Path,
+        default=Path("data/lakehouse/catalog.db"),
+        help="Path to the local SQLite Iceberg catalog",
+    )
+    load_bronze_parser.add_argument(
+        "--warehouse-path",
+        type=Path,
+        default=Path("data/lakehouse/warehouse"),
+        help="Path to the local Iceberg warehouse",
+    )
+    load_bronze_parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=DEFAULT_BATCH_SIZE,
+        help="Maximum number of events per write batch",
+    )
+
     return parser.parse_args(argv)
 
 
 def execute_command(
     arguments: argparse.Namespace,
     client: httpx.Client,
-) -> Path:
+) -> Path | int:
     """Execute a parsed CLI command."""
     if arguments.command == "ingest-gharchive":
         return download_archive(
@@ -48,6 +92,29 @@ def execute_command(
             raw_root=cast(Path, arguments.raw_root),
             client=client,
         )
+
+    if arguments.command == "load-gharchive-bronze":
+        with open_local_catalog(
+            catalog_name="local",
+            catalog_path=cast(Path, arguments.catalog_path),
+            warehouse_path=cast(
+                Path,
+                arguments.warehouse_path,
+            ),
+        ) as catalog:
+            table = ensure_bronze_events_table(catalog)
+            return load_archive_to_bronze(
+                archive_path=cast(
+                    Path,
+                    arguments.archive_path,
+                ),
+                archive_hour=cast(
+                    datetime,
+                    arguments.archive_hour,
+                ),
+                table=table,
+                batch_size=cast(int, arguments.batch_size),
+            )
 
     raise ValueError(f"unsupported command: {arguments.command}")
 
@@ -67,6 +134,6 @@ def main() -> None:
         follow_redirects=True,
         timeout=60.0,
     ) as client:
-        archive_path = execute_command(arguments, client)
+        result = execute_command(arguments, client)
 
-    print(archive_path)
+    print(result)
