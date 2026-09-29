@@ -10,6 +10,10 @@ from de_tech_radar.ingestion.gharchive import download_archive
 from de_tech_radar.lakehouse.catalog import open_local_catalog
 from de_tech_radar.lakehouse.tables import (
     ensure_bronze_events_table,
+    ensure_silver_events_table,
+)
+from de_tech_radar.pipelines.bronze_silver import (
+    load_bronze_source_to_silver,
 )
 from de_tech_radar.pipelines.gharchive_bronze import (
     DEFAULT_BATCH_SIZE,
@@ -77,7 +81,27 @@ def parse_args(
         default=DEFAULT_BATCH_SIZE,
         help="Maximum number of events per write batch",
     )
-
+    load_silver_parser = subparsers.add_parser(
+        "load-gharchive-silver",
+        help="Transform one Bronze source file into Iceberg Silver",
+    )
+    load_silver_parser.add_argument(
+        "--source-file",
+        required=True,
+        help="Bronze source_file value to transform",
+    )
+    load_silver_parser.add_argument(
+        "--catalog-path",
+        type=Path,
+        default=Path("data/lakehouse/catalog.db"),
+        help="Path to the local SQLite Iceberg catalog",
+    )
+    load_silver_parser.add_argument(
+        "--warehouse-path",
+        type=Path,
+        default=Path("data/lakehouse/warehouse"),
+        help="Path to the local Iceberg warehouse",
+    )
     return parser.parse_args(argv)
 
 
@@ -116,6 +140,29 @@ def execute_command(
                 batch_size=cast(int, arguments.batch_size),
             )
 
+    if arguments.command == "load-gharchive-silver":
+        with open_local_catalog(
+            catalog_name="local",
+            catalog_path=cast(
+                Path,
+                arguments.catalog_path,
+            ),
+            warehouse_path=cast(
+                Path,
+                arguments.warehouse_path,
+            ),
+        ) as catalog:
+            bronze_table = ensure_bronze_events_table(catalog)
+            silver_table = ensure_silver_events_table(catalog)
+
+            return load_bronze_source_to_silver(
+                bronze_table=bronze_table,
+                silver_table=silver_table,
+                source_file=cast(
+                    str,
+                    arguments.source_file,
+                ),
+            )
     raise ValueError(f"unsupported command: {arguments.command}")
 
 
