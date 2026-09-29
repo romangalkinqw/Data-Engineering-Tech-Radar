@@ -82,6 +82,12 @@ The local development lakehouse uses a SQLite catalog at `data/lakehouse/catalog
 
 Both table-loading commands print the number of written rows. Successfully committed source files are recorded in Iceberg snapshot metadata, so sequential retries return `0` without creating duplicates. All rows belonging to one source file are published atomically. An unknown Bronze `source_file` is rejected instead of being treated as a successful empty load.
 
+## Technology catalog
+
+`config/technologies.toml` is the version-controlled source of truth that maps stable technology IDs, display names, and categories to GitHub repositories. The initial catalog covers orchestration, transformation, processing, streaming, table formats, query engines, ingestion, and data quality tools.
+
+The typed catalog loader normalizes repository names, validates the `owner/name` format, and rejects duplicate technology IDs or repository assignments. It also builds a repository index for constant-time classification of Silver events. This mapping will drive the Gold activity metrics.
+
 ## Quality checks
 
 ```bash

@@ -1,0 +1,71 @@
+[[technologies]]
+id = "apache-airflow"
+name = "Apache Airflow"
+category = "orchestration"
+repositories = ["apache/airflow"]
+
+[[technologies]]
+id = "dagster"
+name = "Dagster"
+category = "orchestration"
+repositories = ["dagster-io/dagster"]
+
+[[technologies]]
+id = "dbt-core"
+name = "dbt Core"
+category = "transformation"
+repositories = ["dbt-labs/dbt-core"]
+
+[[technologies]]
+id = "apache-spark"
+name = "Apache Spark"
+category = "processing"
+repositories = ["apache/spark"]
+
+[[technologies]]
+id = "apache-flink"
+name = "Apache Flink"
+category = "stream-processing"
+repositories = ["apache/flink"]
+
+[[technologies]]
+id = "apache-kafka"
+name = "Apache Kafka"
+category = "streaming"
+repositories = ["apache/kafka"]
+
+[[technologies]]
+id = "apache-iceberg"
+name = "Apache Iceberg"
+category = "table-format"
+repositories = ["apache/iceberg"]
+
+[[technologies]]
+id = "delta-lake"
+name = "Delta Lake"
+category = "table-format"
+repositories = ["delta-io/delta"]
+
+[[technologies]]
+id = "trino"
+name = "Trino"
+category = "query-engine"
+repositories = ["trinodb/trino"]
+
+[[technologies]]
+id = "duckdb"
+name = "DuckDB"
+category = "query-engine"
+repositories = ["duckdb/duckdb"]
+
+[[technologies]]
+id = "airbyte"
+name = "Airbyte"
+category = "ingestion"
+repositories = ["airbytehq/airbyte"]
+
+[[technologies]]
+id = "great-expectations"
+name = "Great Expectations"
+category = "data-quality"
+repositories = ["great-expectations/great_expectations"]
