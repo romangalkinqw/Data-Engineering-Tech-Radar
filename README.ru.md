@@ -12,10 +12,11 @@ Pet-проект для отслеживания активности open-sourc
 
 ## Текущий функционал
 
-Пайплайн обрабатывает один часовой файл GH Archive через слои Raw, Bronze и Silver:
+Дневной пайплайн оркестрируется Dagster и обрабатывает 24 часовых файла GH Archive через слои Raw, Bronze, Silver и Gold:
 
 ```text
-GH Archive
+Дневная партиция Dagster
+  → GH Archive
   → потоковая HTTP-загрузка
   → партиционированный Raw .json.gz
   → потоковый JSON-парсер
@@ -61,7 +62,7 @@ uv run de-tech-radar run-gharchive-day \
 Команда разворачивает дату в 24 часовых файла GH Archive, проводит каждый час через Raw, Bronze и Silver, а затем атомарно пересобирает дневную Gold-партицию. В конце выводится операционный отчёт:
 
 ```text
-DailyPipelineResult(archive_count=24, bronze_rows=207588, silver_rows=207588, gold_rows=2)
+DailyPipelineResult(archive_count=24, bronze_rows=218939, silver_rows=218939, gold_rows=2)
 ```
 
 Пайплайн безопасно перезапускается после сбоя. Существующие Raw-файлы используются повторно, обработанные Bronze- и Silver-источники пропускаются, а Gold пересчитывается без дубликатов. Отдельные stage-команды ниже остаются доступными для отладки и точечного backfill.
@@ -94,7 +95,7 @@ uv run de-tech-radar load-gharchive-bronze \
 
 ```bash
 uv run de-tech-radar load-gharchive-silver \
-  --source-file data/raw/gharchive/archive_date=2015-01-01/archive_hour=15/2015-01-01-15.json.gz
+  --source-file 2015-01-01-15.json.gz
 ```
 
 Построение дневных Gold-метрик из Silver:
@@ -110,6 +111,26 @@ uv run de-tech-radar build-gold-daily-activity \
 
 Gold-команда полностью пересчитывает выбранную дату и атомарно заменяет соответствующую Iceberg-партицию. Повторный запуск создаёт то же итоговое состояние без дубликатов, а поздно поступившие Silver-события включаются при следующем пересчёте. Предыдущие состояния таблицы остаются доступны через историю Iceberg snapshot.
 
+## Оркестрация
+
+Dagster представляет полный дневной пайплайн как партиционированный asset `daily_technology_activity`. Каждая партиция соответствует одной UTC-дате. Asset запускается job `daily_technology_activity_job`, а `daily_technology_activity_schedule` ежедневно в 02:00 UTC выбирает последнюю завершённую партицию.
+
+Пути файловой системы передаются через типизированный configurable resource `RadarPaths` и разрешаются относительно корня проекта, поэтому запуск не зависит от текущей директории worker-процесса. Материализация публикует в Dagster UI metadata `archive_count`, `bronze_rows`, `silver_rows` и `gold_rows`.
+
+Проверка Dagster code location:
+
+```bash
+uv run dg check defs
+```
+
+Запуск локального Dagster UI:
+
+```bash
+uv run dg dev
+```
+
+После запуска откройте `http://127.0.0.1:3000` и материализуйте партицию нужной даты. Повторная материализация `2015-01-01` записывает `0` новых Bronze- и Silver-строк и безопасно пересобирает те же две Gold-строки.
+
 ## Каталог технологий
 
 `config/technologies.toml` — версионируемый источник истины, который связывает стабильные идентификаторы технологий, отображаемые названия и категории с GitHub-репозиториями. Начальный каталог охватывает оркестрацию, трансформацию, обработку данных, стриминг, форматы таблиц, движки запросов, ingestion и контроль качества данных.
@@ -123,6 +144,7 @@ uv run ruff format --check .
 uv run ruff check .
 uv run mypy
 uv run pytest
+uv run dg check defs
 ```
 
-Те же проверки выполняются в GitHub Actions для pull request и защищают ветку `main`.
+Те же проверки, включая валидацию Dagster definitions, выполняются в GitHub Actions для pull request и защищают ветку `main`.
