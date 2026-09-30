@@ -16,6 +16,10 @@ from de_tech_radar.lakehouse.tables import (
 from de_tech_radar.pipelines.bronze_silver import (
     load_bronze_source_to_silver,
 )
+from de_tech_radar.pipelines.daily import (
+    DailyPipelineResult,
+    run_daily_pipeline,
+)
 from de_tech_radar.pipelines.gharchive_bronze import (
     DEFAULT_BATCH_SIZE,
     load_archive_to_bronze,
@@ -139,13 +143,49 @@ def parse_args(
         default=Path("data/lakehouse/warehouse"),
         help="Path to the local Iceberg warehouse",
     )
+    run_day_parser = subparsers.add_parser(
+        "run-gharchive-day",
+        help="Run the complete Raw-to-Gold daily pipeline",
+    )
+    run_day_parser.add_argument(
+        "--date",
+        dest="activity_date",
+        type=_parse_date,
+        required=True,
+        help="Activity date in YYYY-MM-DD format",
+    )
+    run_day_parser.add_argument(
+        "--raw-root",
+        type=Path,
+        default=Path("data/raw"),
+        help="Root directory of the raw data zone",
+    )
+    run_day_parser.add_argument(
+        "--technology-catalog",
+        dest="technology_catalog_path",
+        type=Path,
+        default=Path("config/technologies.toml"),
+        help="Path to the technology catalog TOML file",
+    )
+    run_day_parser.add_argument(
+        "--catalog-path",
+        type=Path,
+        default=Path("data/lakehouse/catalog.db"),
+        help="Path to the local SQLite Iceberg catalog",
+    )
+    run_day_parser.add_argument(
+        "--warehouse-path",
+        type=Path,
+        default=Path("data/lakehouse/warehouse"),
+        help="Path to the local Iceberg warehouse",
+    )
     return parser.parse_args(argv)
 
 
 def execute_command(
     arguments: argparse.Namespace,
     client: httpx.Client,
-) -> Path | int:
+) -> Path | int | DailyPipelineResult:
     """Execute a parsed CLI command."""
     if arguments.command == "ingest-gharchive":
         return download_archive(
@@ -230,6 +270,44 @@ def execute_command(
                     arguments.activity_date,
                 ),
                 technologies=technologies,
+            )
+    if arguments.command == "run-gharchive-day":
+        technologies = load_technology_catalog(
+            cast(
+                Path,
+                arguments.technology_catalog_path,
+            )
+        )
+
+        with open_local_catalog(
+            catalog_name="local",
+            catalog_path=cast(
+                Path,
+                arguments.catalog_path,
+            ),
+            warehouse_path=cast(
+                Path,
+                arguments.warehouse_path,
+            ),
+        ) as catalog:
+            bronze_table = ensure_bronze_events_table(catalog)
+            silver_table = ensure_silver_events_table(catalog)
+            gold_table = ensure_gold_daily_activity_table(catalog)
+
+            return run_daily_pipeline(
+                activity_date=cast(
+                    date,
+                    arguments.activity_date,
+                ),
+                raw_root=cast(
+                    Path,
+                    arguments.raw_root,
+                ),
+                bronze_table=bronze_table,
+                silver_table=silver_table,
+                gold_table=gold_table,
+                technologies=technologies,
+                client=client,
             )
     raise ValueError(f"unsupported command: {arguments.command}")
 

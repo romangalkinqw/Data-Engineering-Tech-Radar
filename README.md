@@ -51,6 +51,21 @@ Install the project and its locked dependencies:
 uv sync --locked
 ```
 
+Run the complete Raw-to-Gold pipeline for one UTC day:
+
+```bash
+uv run de-tech-radar run-gharchive-day \
+  --date 2015-01-01
+```
+
+The command expands the date into 24 hourly GH Archive deliveries, processes every hour through Raw, Bronze, and Silver, and then atomically rebuilds the Gold date partition. It prints an operational summary:
+
+```text
+DailyPipelineResult(archive_count=24, bronze_rows=207588, silver_rows=207588, gold_rows=2)
+```
+
+The pipeline is restart-safe. Existing Raw files are reused, committed Bronze and Silver sources are skipped, and Gold is recomputed without duplicate rows. The individual stage commands below remain available for debugging and targeted backfills.
+
 Download one hourly archive:
 
 ```bash
