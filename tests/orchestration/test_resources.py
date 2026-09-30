@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from de_tech_radar.orchestration.resources import RadarPaths
+from de_tech_radar.orchestration.resources import (
+    PostgresServing,
+    RadarPaths,
+)
 
 
 def test_radar_paths_have_local_defaults() -> None:
@@ -22,3 +25,12 @@ def test_radar_paths_resolve_from_project_root(
     resolved_path = paths.resolve(paths.technology_catalog_path)
 
     assert resolved_path == (tmp_path / "config" / "technologies.toml")
+
+
+def test_postgres_serving_has_safe_defaults() -> None:
+    postgres = PostgresServing(
+        dsn="postgresql://example",
+    )
+
+    assert postgres.dsn == "postgresql://example"
+    assert postgres.connect_timeout == 5

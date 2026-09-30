@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Any
 
 import dagster as dg
+import psycopg
 
 _DEFAULT_PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
@@ -23,3 +25,20 @@ class RadarPaths(dg.ConfigurableResource["RadarPaths"]):
             return path
 
         return Path(self.project_root) / path
+
+
+class PostgresServing(dg.ConfigurableResource["PostgresServing"]):
+    """PostgreSQL serving-layer connection settings."""
+
+    dsn: str
+    connect_timeout: int = 5
+
+    def connect(
+        self,
+    ) -> psycopg.Connection[tuple[Any, ...]]:
+        """Open a PostgreSQL connection."""
+
+        return psycopg.connect(
+            self.dsn,
+            connect_timeout=self.connect_timeout,
+        )

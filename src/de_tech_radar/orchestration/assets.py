@@ -9,10 +9,16 @@ from de_tech_radar.lakehouse.tables import (
     ensure_gold_daily_activity_table,
     ensure_silver_events_table,
 )
-from de_tech_radar.orchestration.resources import RadarPaths
+from de_tech_radar.orchestration.resources import (
+    PostgresServing,
+    RadarPaths,
+)
 from de_tech_radar.pipelines.daily import (
     DailyPipelineResult,
     run_daily_pipeline,
+)
+from de_tech_radar.pipelines.gold_postgres import (
+    publish_gold_date_to_postgres,
 )
 from de_tech_radar.technologies.catalog import (
     load_technology_catalog,
@@ -56,6 +62,29 @@ def run_daily_partition(
             )
 
 
+def publish_daily_partition(
+    *,
+    activity_date: date,
+    paths: RadarPaths,
+    postgres: PostgresServing,
+) -> int:
+    """Publish one Gold partition into PostgreSQL."""
+
+    with open_local_catalog(
+        catalog_name="local",
+        catalog_path=paths.resolve(paths.catalog_path),
+        warehouse_path=paths.resolve(paths.warehouse_path),
+    ) as catalog:
+        gold_table = ensure_gold_daily_activity_table(catalog)
+
+        with postgres.connect() as connection:
+            return publish_gold_date_to_postgres(
+                gold_table=gold_table,
+                connection=connection,
+                activity_date=activity_date,
+            )
+
+
 @dg.asset(
     partitions_def=DAILY_PARTITIONS,
     group_name="tech_radar",
@@ -77,5 +106,30 @@ def daily_technology_activity(
             "bronze_rows": result.bronze_rows,
             "silver_rows": result.silver_rows,
             "gold_rows": result.gold_rows,
+        }
+    )
+
+
+@dg.asset(
+    partitions_def=DAILY_PARTITIONS,
+    group_name="tech_radar",
+    deps=[daily_technology_activity],
+)
+def postgres_daily_technology_activity(
+    context: dg.AssetExecutionContext,
+    paths: RadarPaths,
+    postgres: PostgresServing,
+) -> dg.MaterializeResult[None]:
+    """Publish one Gold partition into PostgreSQL."""
+
+    published_rows = publish_daily_partition(
+        activity_date=date.fromisoformat(context.partition_key),
+        paths=paths,
+        postgres=postgres,
+    )
+
+    return dg.MaterializeResult(
+        metadata={
+            "published_rows": published_rows,
         }
     )

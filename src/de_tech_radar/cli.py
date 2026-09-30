@@ -1,10 +1,12 @@
 import argparse
+import os
 from collections.abc import Sequence
 from datetime import date, datetime
 from pathlib import Path
 from typing import cast
 
 import httpx
+import psycopg
 
 from de_tech_radar.ingestion.gharchive import download_archive
 from de_tech_radar.lakehouse.catalog import open_local_catalog
@@ -23,6 +25,9 @@ from de_tech_radar.pipelines.daily import (
 from de_tech_radar.pipelines.gharchive_bronze import (
     DEFAULT_BATCH_SIZE,
     load_archive_to_bronze,
+)
+from de_tech_radar.pipelines.gold_postgres import (
+    publish_gold_date_to_postgres,
 )
 from de_tech_radar.pipelines.silver_gold import (
     load_silver_date_to_gold,
@@ -138,6 +143,29 @@ def parse_args(
         help="Path to the local SQLite Iceberg catalog",
     )
     build_gold_parser.add_argument(
+        "--warehouse-path",
+        type=Path,
+        default=Path("data/lakehouse/warehouse"),
+        help="Path to the local Iceberg warehouse",
+    )
+    publish_postgres_parser = subparsers.add_parser(
+        "publish-gold-postgres",
+        help="Publish one Gold date into PostgreSQL",
+    )
+    publish_postgres_parser.add_argument(
+        "--date",
+        dest="activity_date",
+        type=_parse_date,
+        required=True,
+        help="Activity date in YYYY-MM-DD format",
+    )
+    publish_postgres_parser.add_argument(
+        "--catalog-path",
+        type=Path,
+        default=Path("data/lakehouse/catalog.db"),
+        help="Path to the local SQLite Iceberg catalog",
+    )
+    publish_postgres_parser.add_argument(
         "--warehouse-path",
         type=Path,
         default=Path("data/lakehouse/warehouse"),
@@ -271,6 +299,37 @@ def execute_command(
                 ),
                 technologies=technologies,
             )
+    if arguments.command == "publish-gold-postgres":
+        postgres_dsn = os.getenv("DE_TECH_RADAR_POSTGRES_DSN")
+
+        if not postgres_dsn:
+            raise ValueError("DE_TECH_RADAR_POSTGRES_DSN is not configured")
+
+        with open_local_catalog(
+            catalog_name="local",
+            catalog_path=cast(
+                Path,
+                arguments.catalog_path,
+            ),
+            warehouse_path=cast(
+                Path,
+                arguments.warehouse_path,
+            ),
+        ) as catalog:
+            gold_table = ensure_gold_daily_activity_table(catalog)
+
+            with psycopg.connect(
+                postgres_dsn,
+                connect_timeout=5,
+            ) as connection:
+                return publish_gold_date_to_postgres(
+                    gold_table=gold_table,
+                    connection=connection,
+                    activity_date=cast(
+                        date,
+                        arguments.activity_date,
+                    ),
+                )
     if arguments.command == "run-gharchive-day":
         technologies = load_technology_catalog(
             cast(
