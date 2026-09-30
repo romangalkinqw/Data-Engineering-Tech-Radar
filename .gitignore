@@ -219,3 +219,6 @@ __marimo__/
 
 # Local data lake
 /data/
+
+# Dagster
+/.tmp_dagster_home_*/

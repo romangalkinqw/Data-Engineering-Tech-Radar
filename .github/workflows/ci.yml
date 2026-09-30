@@ -39,5 +39,8 @@ jobs:
       - name: Run type checker
         run: uv run mypy
 
+      - name: Validate Dagster definitions
+        run: uv run dg check defs
+        
       - name: Run tests
         run: uv run pytest

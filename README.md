@@ -12,10 +12,11 @@ Identify which data engineering technologies are gaining or losing momentum base
 
 ## Current functionality
 
-The pipeline processes one hourly GH Archive delivery through Raw, Bronze, and Silver layers:
+The daily pipeline is orchestrated by Dagster and processes 24 hourly GH Archive deliveries through Raw, Bronze, Silver, and Gold layers:
 
 ```text
-GH Archive
+Dagster daily partition
+  → GH Archive
   → HTTP streaming
   → partitioned Raw .json.gz
   → streaming JSON parser
@@ -61,7 +62,7 @@ uv run de-tech-radar run-gharchive-day \
 The command expands the date into 24 hourly GH Archive deliveries, processes every hour through Raw, Bronze, and Silver, and then atomically rebuilds the Gold date partition. It prints an operational summary:
 
 ```text
-DailyPipelineResult(archive_count=24, bronze_rows=207588, silver_rows=207588, gold_rows=2)
+DailyPipelineResult(archive_count=24, bronze_rows=218939, silver_rows=218939, gold_rows=2)
 ```
 
 The pipeline is restart-safe. Existing Raw files are reused, committed Bronze and Silver sources are skipped, and Gold is recomputed without duplicate rows. The individual stage commands below remain available for debugging and targeted backfills.
@@ -94,7 +95,7 @@ Transform the Bronze source into the Iceberg Silver table:
 
 ```bash
 uv run de-tech-radar load-gharchive-silver \
-  --source-file data/raw/gharchive/archive_date=2015-01-01/archive_hour=15/2015-01-01-15.json.gz
+  --source-file 2015-01-01-15.json.gz
 ```
 
 Build daily Gold activity metrics from Silver:
@@ -110,6 +111,26 @@ The Bronze and Silver loading commands print the number of written rows. Success
 
 The Gold command recomputes the complete selected date and atomically replaces its Iceberg partition. Repeating the command produces the same final rows without duplicates, while late-arriving Silver events are included on the next run. Previous table states remain available through Iceberg snapshot history.
 
+## Orchestration
+
+Dagster exposes the complete daily pipeline as the partitioned `daily_technology_activity` asset. Each partition represents one UTC date. The asset is executed by `daily_technology_activity_job`, and `daily_technology_activity_schedule` targets the latest completed partition every day at 02:00 UTC.
+
+Filesystem locations are supplied through the typed `RadarPaths` configurable resource and are resolved from the project root, so runs are independent of the worker process current directory. Materializations publish `archive_count`, `bronze_rows`, `silver_rows`, and `gold_rows` metadata in the Dagster UI.
+
+Validate the Dagster code location:
+
+```bash
+uv run dg check defs
+```
+
+Start the local Dagster UI:
+
+```bash
+uv run dg dev
+```
+
+Open `http://127.0.0.1:3000` and materialize a date partition. Repeating the `2015-01-01` partition writes `0` new Bronze and Silver rows while safely rebuilding the same two Gold rows.
+
 ## Technology catalog
 
 `config/technologies.toml` is the version-controlled source of truth that maps stable technology IDs, display names, and categories to GitHub repositories. The initial catalog covers orchestration, transformation, processing, streaming, table formats, query engines, ingestion, and data quality tools.
@@ -123,6 +144,7 @@ uv run ruff format --check .
 uv run ruff check .
 uv run mypy
 uv run pytest
+uv run dg check defs
 ```
 
-The same checks run in GitHub Actions for pull requests and protect the `main` branch.
+The same checks, including Dagster definition validation, run in GitHub Actions for pull requests and protect the `main` branch.

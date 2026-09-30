@@ -85,7 +85,7 @@ def run_archive_hours(
         silver_rows += load_bronze_source_to_silver(
             bronze_table=bronze_table,
             silver_table=silver_table,
-            source_file=archive_path.as_posix(),
+            source_file=archive_path.name,
         )
 
     gold_rows = load_silver_date_to_gold(

@@ -124,7 +124,7 @@ def iter_archive_events(
         for line_number, line in enumerate(stream, start=1):
             yield parse_event_line(
                 line,
-                source_file=archive_path.as_posix(),
+                source_file=archive_path.name,
                 source_line_number=line_number,
                 archive_hour=archive_hour,
             )

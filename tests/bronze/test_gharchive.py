@@ -128,7 +128,7 @@ def test_iter_archive_events_streams_gzip_lines(tmp_path: Path) -> None:
         "WatchEvent",
     ]
     assert [record.source_line_number for record in records] == [1, 2]
-    assert all(record.source_file == archive_path.as_posix() for record in records)
+    assert all(record.source_file == archive_path.name for record in records)
 
 
 def test_parse_event_line_rejects_invalid_event_id_type() -> None:
