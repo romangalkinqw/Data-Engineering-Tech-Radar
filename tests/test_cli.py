@@ -4,7 +4,9 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 import httpx
+import pytest
 
+import de_tech_radar.cli as cli_module
 from de_tech_radar.bronze.gharchive import BronzeEvent
 from de_tech_radar.cli import execute_command, parse_args
 from de_tech_radar.lakehouse.catalog import open_local_catalog
@@ -15,6 +17,9 @@ from de_tech_radar.lakehouse.tables import (
 from de_tech_radar.lakehouse.writer import (
     append_bronze_events,
     append_silver_events,
+)
+from de_tech_radar.pipelines.daily import (
+    DailyPipelineResult,
 )
 from de_tech_radar.silver.gharchive import SilverEvent
 
@@ -372,3 +377,93 @@ repositories = ["apache/airflow"]
     assert rows[0]["technology_id"] == "apache-airflow"
     assert rows[0]["event_count"] == 1
     assert rows[0]["commit_count"] == 3
+
+
+def test_parse_run_gharchive_day_command() -> None:
+    arguments = parse_args(
+        [
+            "run-gharchive-day",
+            "--date",
+            "2025-01-02",
+        ]
+    )
+
+    assert arguments.command == "run-gharchive-day"
+    assert arguments.activity_date == date(
+        2025,
+        1,
+        2,
+    )
+    assert arguments.raw_root == Path("data/raw")
+    assert arguments.technology_catalog_path == Path("config/technologies.toml")
+    assert arguments.catalog_path == Path("data/lakehouse/catalog.db")
+    assert arguments.warehouse_path == Path("data/lakehouse/warehouse")
+
+
+def test_execute_run_gharchive_day_command(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target_date = date(2025, 1, 2)
+    raw_root = tmp_path / "raw"
+    catalog_path = tmp_path / "catalog.db"
+    warehouse_path = tmp_path / "warehouse"
+    technology_catalog_path = tmp_path / "technologies.toml"
+    technology_catalog_path.write_text(
+        """
+[[technologies]]
+id = "apache-airflow"
+name = "Apache Airflow"
+category = "orchestration"
+repositories = ["apache/airflow"]
+""".strip(),
+        encoding="utf-8",
+    )
+
+    expected_result = DailyPipelineResult(
+        archive_count=24,
+        bronze_rows=24,
+        silver_rows=24,
+        gold_rows=1,
+    )
+
+    def fake_run_daily_pipeline(
+        **arguments: object,
+    ) -> DailyPipelineResult:
+        assert arguments["activity_date"] == target_date
+        assert arguments["raw_root"] == raw_root
+
+        return expected_result
+
+    monkeypatch.setattr(
+        cli_module,
+        "run_daily_pipeline",
+        fake_run_daily_pipeline,
+        raising=False,
+    )
+
+    arguments = parse_args(
+        [
+            "run-gharchive-day",
+            "--date",
+            target_date.isoformat(),
+            "--raw-root",
+            str(raw_root),
+            "--technology-catalog",
+            str(technology_catalog_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--warehouse-path",
+            str(warehouse_path),
+        ]
+    )
+
+    def reject_request(_: httpx.Request) -> httpx.Response:
+        raise AssertionError("mocked daily pipeline must not use HTTP")
+
+    transport = httpx.MockTransport(reject_request)
+
+    with httpx.Client(transport=transport) as client:
+        result = execute_command(arguments, client)
+
+    assert result == expected_result
