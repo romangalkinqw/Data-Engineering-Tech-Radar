@@ -131,6 +131,15 @@ uv run dg dev
 
 Open `http://127.0.0.1:3000` and materialize a date partition. Repeating the `2015-01-01` partition writes `0` new Bronze and Silver rows while safely rebuilding the same two Gold rows.
 
+## Data quality
+
+Blocking Dagster Asset Checks validate every materialized Gold result:
+
+- `unique_gold_keys` requires at most one row per `(technology_id, activity_date)` business key;
+- `valid_gold_metrics` rejects negative counters and inconsistent relationships, including unique actors exceeding total events, merged pull requests exceeding pull requests, or event subtype counts exceeding total events.
+
+Each check reads only the selected Gold date and publishes row and violation counts as Dagster metadata. For the `2015-01-01` materialization, both checks pass with two Gold rows, zero duplicate keys, and zero invalid metric rows. A failed blocking check marks the run unsuccessful instead of silently exposing invalid data to downstream BI consumers.
+
 ## Technology catalog
 
 `config/technologies.toml` is the version-controlled source of truth that maps stable technology IDs, display names, and categories to GitHub repositories. The initial catalog covers orchestration, transformation, processing, streaming, table formats, query engines, ingestion, and data quality tools.
