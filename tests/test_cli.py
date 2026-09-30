@@ -1,6 +1,6 @@
 import gzip
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import httpx
@@ -10,8 +10,13 @@ from de_tech_radar.cli import execute_command, parse_args
 from de_tech_radar.lakehouse.catalog import open_local_catalog
 from de_tech_radar.lakehouse.tables import (
     ensure_bronze_events_table,
+    ensure_silver_events_table,
 )
-from de_tech_radar.lakehouse.writer import append_bronze_events
+from de_tech_radar.lakehouse.writer import (
+    append_bronze_events,
+    append_silver_events,
+)
+from de_tech_radar.silver.gharchive import SilverEvent
 
 
 def test_parse_ingest_gharchive_command() -> None:
@@ -252,3 +257,118 @@ def test_execute_load_gharchive_silver_command(
     assert len(rows) == 1
     assert rows[0]["event_id"] == "123456"
     assert rows[0]["commit_count"] == 2
+
+
+def test_parse_build_gold_daily_activity_command() -> None:
+    arguments = parse_args(
+        [
+            "build-gold-daily-activity",
+            "--date",
+            "2025-01-02",
+        ]
+    )
+
+    assert arguments.command == "build-gold-daily-activity"
+    assert arguments.activity_date == date(
+        2025,
+        1,
+        2,
+    )
+    assert arguments.technology_catalog_path == Path("config/technologies.toml")
+    assert arguments.catalog_path == Path("data/lakehouse/catalog.db")
+    assert arguments.warehouse_path == Path("data/lakehouse/warehouse")
+
+
+def test_execute_build_gold_daily_activity_command(
+    tmp_path: Path,
+) -> None:
+    target_date = date(2025, 1, 2)
+    catalog_path = tmp_path / "catalog.db"
+    warehouse_path = tmp_path / "warehouse"
+    technology_catalog_path = tmp_path / "technologies.toml"
+    technology_catalog_path.write_text(
+        """
+[[technologies]]
+id = "apache-airflow"
+name = "Apache Airflow"
+category = "orchestration"
+repositories = ["apache/airflow"]
+""".strip(),
+        encoding="utf-8",
+    )
+
+    event = SilverEvent(
+        event_id="1",
+        event_type="PushEvent",
+        event_date=target_date,
+        created_at=datetime(
+            2025,
+            1,
+            2,
+            3,
+            15,
+            tzinfo=UTC,
+        ),
+        actor_id=10,
+        actor_login="alice",
+        repo_id=20,
+        repo_name="apache/airflow",
+        org_id=None,
+        org_login=None,
+        action=None,
+        commit_count=3,
+        is_merged=None,
+        archive_hour=datetime(
+            2025,
+            1,
+            2,
+            3,
+            tzinfo=UTC,
+        ),
+        source_file="source.json.gz",
+        source_line_number=1,
+    )
+
+    with open_local_catalog(
+        catalog_name="local",
+        catalog_path=catalog_path,
+        warehouse_path=warehouse_path,
+    ) as catalog:
+        silver_table = ensure_silver_events_table(catalog)
+        append_silver_events(silver_table, [event])
+
+    arguments = parse_args(
+        [
+            "build-gold-daily-activity",
+            "--date",
+            target_date.isoformat(),
+            "--technology-catalog",
+            str(technology_catalog_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--warehouse-path",
+            str(warehouse_path),
+        ]
+    )
+
+    def reject_request(_: httpx.Request) -> httpx.Response:
+        raise AssertionError("HTTP request must not be made")
+
+    transport = httpx.MockTransport(reject_request)
+
+    with httpx.Client(transport=transport) as client:
+        written_rows = execute_command(arguments, client)
+
+    assert written_rows == 1
+
+    with open_local_catalog(
+        catalog_name="local",
+        catalog_path=catalog_path,
+        warehouse_path=warehouse_path,
+    ) as catalog:
+        rows = catalog.load_table("gold.daily_technology_activity").scan().to_arrow().to_pylist()
+
+    assert len(rows) == 1
+    assert rows[0]["technology_id"] == "apache-airflow"
+    assert rows[0]["event_count"] == 1
+    assert rows[0]["commit_count"] == 3
