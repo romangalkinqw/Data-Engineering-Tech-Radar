@@ -1,6 +1,6 @@
 import argparse
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import cast
 
@@ -10,6 +10,7 @@ from de_tech_radar.ingestion.gharchive import download_archive
 from de_tech_radar.lakehouse.catalog import open_local_catalog
 from de_tech_radar.lakehouse.tables import (
     ensure_bronze_events_table,
+    ensure_gold_daily_activity_table,
     ensure_silver_events_table,
 )
 from de_tech_radar.pipelines.bronze_silver import (
@@ -18,6 +19,12 @@ from de_tech_radar.pipelines.bronze_silver import (
 from de_tech_radar.pipelines.gharchive_bronze import (
     DEFAULT_BATCH_SIZE,
     load_archive_to_bronze,
+)
+from de_tech_radar.pipelines.silver_gold import (
+    load_silver_date_to_gold,
+)
+from de_tech_radar.technologies.catalog import (
+    load_technology_catalog,
 )
 
 
@@ -102,6 +109,36 @@ def parse_args(
         default=Path("data/lakehouse/warehouse"),
         help="Path to the local Iceberg warehouse",
     )
+    build_gold_parser = subparsers.add_parser(
+        "build-gold-daily-activity",
+        help="Build Gold technology activity for one date",
+    )
+    build_gold_parser.add_argument(
+        "--date",
+        dest="activity_date",
+        type=_parse_date,
+        required=True,
+        help="Activity date in YYYY-MM-DD format",
+    )
+    build_gold_parser.add_argument(
+        "--technology-catalog",
+        dest="technology_catalog_path",
+        type=Path,
+        default=Path("config/technologies.toml"),
+        help="Path to the technology catalog TOML file",
+    )
+    build_gold_parser.add_argument(
+        "--catalog-path",
+        type=Path,
+        default=Path("data/lakehouse/catalog.db"),
+        help="Path to the local SQLite Iceberg catalog",
+    )
+    build_gold_parser.add_argument(
+        "--warehouse-path",
+        type=Path,
+        default=Path("data/lakehouse/warehouse"),
+        help="Path to the local Iceberg warehouse",
+    )
     return parser.parse_args(argv)
 
 
@@ -163,6 +200,37 @@ def execute_command(
                     arguments.source_file,
                 ),
             )
+
+    if arguments.command == "build-gold-daily-activity":
+        technology_catalog_path = cast(
+            Path,
+            arguments.technology_catalog_path,
+        )
+        technologies = load_technology_catalog(technology_catalog_path)
+
+        with open_local_catalog(
+            catalog_name="local",
+            catalog_path=cast(
+                Path,
+                arguments.catalog_path,
+            ),
+            warehouse_path=cast(
+                Path,
+                arguments.warehouse_path,
+            ),
+        ) as catalog:
+            silver_table = ensure_silver_events_table(catalog)
+            gold_table = ensure_gold_daily_activity_table(catalog)
+
+            return load_silver_date_to_gold(
+                silver_table=silver_table,
+                gold_table=gold_table,
+                activity_date=cast(
+                    date,
+                    arguments.activity_date,
+                ),
+                technologies=technologies,
+            )
     raise ValueError(f"unsupported command: {arguments.command}")
 
 
@@ -171,6 +239,13 @@ def _parse_archive_hour(value: str) -> datetime:
         return datetime.fromisoformat(value)
     except ValueError as error:
         raise argparse.ArgumentTypeError(f"invalid ISO 8601 datetime: {value}") from error
+
+
+def _parse_date(value: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(f"invalid ISO 8601 date: {value}") from error
 
 
 def main() -> None:

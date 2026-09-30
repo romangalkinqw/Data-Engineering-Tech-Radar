@@ -23,6 +23,8 @@ GH Archive
   → Apache Iceberg Bronze table
   → typed event transformation
   → date-partitioned Apache Iceberg Silver table
+  → technology catalog classification
+  → date-partitioned Apache Iceberg Gold activity table
 ```
 
 The Bronze layer preserves source payloads and ingestion lineage. The Silver layer provides typed, analysis-ready columns and extracts event-specific values such as:
@@ -33,6 +35,8 @@ The Bronze layer preserves source payloads and ingestion lineage. The Silver lay
 - `event_date` for Iceberg partitioning.
 
 Source coordinates remain available through `source_file`, `source_line_number`, and `archive_hour`.
+
+The Gold layer aggregates Silver events into one daily row per tracked technology. It currently exposes total events, unique actors, pushes, commits, pull request activity, merged pull requests, issues, stars, forks, and releases.
 
 ## Quick start
 
@@ -78,15 +82,24 @@ uv run de-tech-radar load-gharchive-silver \
   --source-file data/raw/gharchive/archive_date=2015-01-01/archive_hour=15/2015-01-01-15.json.gz
 ```
 
+Build daily Gold activity metrics from Silver:
+
+```bash
+uv run de-tech-radar build-gold-daily-activity \
+  --date 2015-01-01
+```
+
 The local development lakehouse uses a SQLite catalog at `data/lakehouse/catalog.db` and stores Iceberg metadata and Parquet files under `data/lakehouse/warehouse`.
 
-Both table-loading commands print the number of written rows. Successfully committed source files are recorded in Iceberg snapshot metadata, so sequential retries return `0` without creating duplicates. All rows belonging to one source file are published atomically. An unknown Bronze `source_file` is rejected instead of being treated as a successful empty load.
+The Bronze and Silver loading commands print the number of written rows. Successfully committed source files are recorded in Iceberg snapshot metadata, so sequential retries return `0` without creating duplicates. All rows belonging to one source file are published atomically. An unknown Bronze `source_file` is rejected instead of being treated as a successful empty load.
+
+The Gold command recomputes the complete selected date and atomically replaces its Iceberg partition. Repeating the command produces the same final rows without duplicates, while late-arriving Silver events are included on the next run. Previous table states remain available through Iceberg snapshot history.
 
 ## Technology catalog
 
 `config/technologies.toml` is the version-controlled source of truth that maps stable technology IDs, display names, and categories to GitHub repositories. The initial catalog covers orchestration, transformation, processing, streaming, table formats, query engines, ingestion, and data quality tools.
 
-The typed catalog loader normalizes repository names, validates the `owner/name` format, and rejects duplicate technology IDs or repository assignments. It also builds a repository index for constant-time classification of Silver events. This mapping will drive the Gold activity metrics.
+The typed catalog loader normalizes repository names, validates the `owner/name` format, and rejects duplicate technology IDs or repository assignments. It also builds a repository index for constant-time classification of Silver events. This mapping drives the Gold activity metrics.
 
 ## Quality checks
 

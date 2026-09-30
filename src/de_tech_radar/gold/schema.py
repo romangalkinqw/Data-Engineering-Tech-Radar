@@ -1,0 +1,85 @@
+from pyiceberg.schema import Schema
+from pyiceberg.types import (
+    DateType,
+    LongType,
+    NestedField,
+    StringType,
+)
+
+
+def daily_activity_iceberg_schema() -> Schema:
+    """Return the stable Iceberg schema for daily activity."""
+    return Schema(
+        NestedField(
+            field_id=1,
+            name="technology_id",
+            field_type=StringType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=2,
+            name="activity_date",
+            field_type=DateType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=3,
+            name="event_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=4,
+            name="unique_actor_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=5,
+            name="push_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=6,
+            name="commit_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=7,
+            name="pull_request_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=8,
+            name="merged_pull_request_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=9,
+            name="issue_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=10,
+            name="star_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=11,
+            name="fork_count",
+            field_type=LongType(),
+            required=True,
+        ),
+        NestedField(
+            field_id=12,
+            name="release_count",
+            field_type=LongType(),
+            required=True,
+        ),
+    )
