@@ -1,9 +1,11 @@
 import gzip
 import json
+from contextlib import nullcontext
 from datetime import UTC, date, datetime
 from pathlib import Path
 
 import httpx
+import psycopg
 import pytest
 
 import de_tech_radar.cli as cli_module
@@ -467,3 +469,89 @@ repositories = ["apache/airflow"]
         result = execute_command(arguments, client)
 
     assert result == expected_result
+
+
+def test_parse_publish_gold_postgres_command() -> None:
+    arguments = parse_args(
+        [
+            "publish-gold-postgres",
+            "--date",
+            "2025-01-02",
+        ]
+    )
+
+    assert arguments.command == "publish-gold-postgres"
+    assert arguments.activity_date == date(
+        2025,
+        1,
+        2,
+    )
+    assert arguments.catalog_path == Path("data/lakehouse/catalog.db")
+    assert arguments.warehouse_path == Path("data/lakehouse/warehouse")
+
+
+def test_execute_publish_gold_postgres_command(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target_date = date(2025, 1, 2)
+    catalog_path = tmp_path / "catalog.db"
+    warehouse_path = tmp_path / "warehouse"
+    fake_connection = object()
+    postgres_dsn = "postgresql://test"
+
+    def fake_connect(
+        conninfo: str,
+        *,
+        connect_timeout: int,
+    ) -> nullcontext[object]:
+        assert conninfo == postgres_dsn
+        assert connect_timeout == 5
+
+        return nullcontext(fake_connection)
+
+    def fake_publish_gold_date_to_postgres(
+        **arguments: object,
+    ) -> int:
+        assert arguments["connection"] is fake_connection
+        assert arguments["activity_date"] == target_date
+
+        return 2
+
+    monkeypatch.setenv(
+        "DE_TECH_RADAR_POSTGRES_DSN",
+        postgres_dsn,
+    )
+    monkeypatch.setattr(
+        psycopg,
+        "connect",
+        fake_connect,
+    )
+    monkeypatch.setattr(
+        cli_module,
+        "publish_gold_date_to_postgres",
+        fake_publish_gold_date_to_postgres,
+        raising=False,
+    )
+
+    arguments = parse_args(
+        [
+            "publish-gold-postgres",
+            "--date",
+            target_date.isoformat(),
+            "--catalog-path",
+            str(catalog_path),
+            "--warehouse-path",
+            str(warehouse_path),
+        ]
+    )
+
+    def reject_request(_: httpx.Request) -> httpx.Response:
+        raise AssertionError("HTTP request must not be made")
+
+    transport = httpx.MockTransport(reject_request)
+
+    with httpx.Client(transport=transport) as client:
+        result = execute_command(arguments, client)
+
+    assert result == 2

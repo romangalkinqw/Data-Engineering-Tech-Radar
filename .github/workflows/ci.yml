@@ -15,6 +15,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    env:
+      TEST_POSTGRES_DSN: postgresql://de_tech_radar:de_tech_radar_test@127.0.0.1:5432/de_tech_radar
+      DE_TECH_RADAR_POSTGRES_DSN: postgresql://de_tech_radar:de_tech_radar_test@127.0.0.1:5432/de_tech_radar
+
+    services:
+      postgres:
+        image: postgres:18.6-alpine3.24
+        env:
+          POSTGRES_DB: de_tech_radar
+          POSTGRES_USER: de_tech_radar
+          POSTGRES_PASSWORD: de_tech_radar_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd
+          "pg_isready -U de_tech_radar -d de_tech_radar"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

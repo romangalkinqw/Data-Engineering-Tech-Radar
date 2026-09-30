@@ -29,3 +29,17 @@ def test_definitions_register_valid_gold_metrics() -> None:
     asset_graph = defs.resolve_asset_graph()
 
     assert valid_gold_metrics.check_key in asset_graph.asset_check_keys
+
+
+def test_daily_job_includes_postgres_asset() -> None:
+    asset_graph = defs.resolve_asset_graph()
+    postgres_key = dg.AssetKey("postgres_daily_technology_activity")
+
+    assert asset_graph.has(postgres_key)
+
+    job = defs.resolve_job_def("daily_technology_activity_job")
+
+    assert job.asset_layer.executable_asset_keys == {
+        dg.AssetKey("daily_technology_activity"),
+        postgres_key,
+    }

@@ -4,7 +4,7 @@
 
 Pet-проект для отслеживания активности open-source технологий в области Data Engineering.
 
-Проект загружает публичные события GitHub из GH Archive, хранит исторические данные в lakehouse, преобразует сырые события в типизированные аналитические записи, а в дальнейшем будет использовать витрины и Tableau-дашборды для визуализации технологических трендов.
+Проект загружает публичные события GitHub из GH Archive, хранит исторические данные в lakehouse, преобразует сырые события в типизированные аналитические записи и публикует готовые метрики в PostgreSQL для BI-инструментов, включая Tableau.
 
 ## Цель
 
@@ -12,7 +12,7 @@ Pet-проект для отслеживания активности open-sourc
 
 ## Текущий функционал
 
-Дневной пайплайн оркестрируется Dagster и обрабатывает 24 часовых файла GH Archive через слои Raw, Bronze, Silver и Gold:
+Дневной пайплайн оркестрируется Dagster и обрабатывает 24 часовых файла GH Archive через слои Raw, Bronze, Silver, Gold и PostgreSQL serving:
 
 ```text
 Дневная партиция Dagster
@@ -26,6 +26,8 @@ Pet-проект для отслеживания активности open-sourc
   → партиционированная по дате Silver-таблица Apache Iceberg
   → классификация по каталогу технологий
   → партиционированная по дате Gold-таблица активности Apache Iceberg
+  → идемпотентная serving-таблица PostgreSQL
+  → Tableau-дашборды (планируется)
 ```
 
 Bronze-слой сохраняет исходный payload и технические поля происхождения данных. Silver-слой предоставляет типизированные колонки для аналитики и извлекает значения, зависящие от типа события:
@@ -37,7 +39,7 @@ Bronze-слой сохраняет исходный payload и техничес�
 
 Связь с источником сохраняется в полях `source_file`, `source_line_number` и `archive_hour`.
 
-Gold-слой агрегирует Silver-события в одну дневную строку для каждой отслеживаемой технологии. Сейчас витрина содержит общее количество событий, уникальных участников, push-события, коммиты, активность pull request, merge, issues, stars, forks и releases.
+Gold-слой агрегирует Silver-события в одну дневную строку для каждой отслеживаемой технологии. Сейчас витрина содержит общее количество событий, уникальных участников, push-события, коммиты, активность pull request, merge, issues, stars, forks и releases. PostgreSQL serving-слой публикует эти строки в реляционном виде для Tableau и других BI-клиентов.
 
 ## Быстрый старт
 
@@ -45,6 +47,7 @@ Gold-слой агрегирует Silver-события в одну дневн�
 
 - Python 3.14
 - uv
+- Docker с Docker Compose
 
 Установка проекта и зафиксированных зависимостей:
 
@@ -105,31 +108,53 @@ uv run de-tech-radar build-gold-daily-activity \
   --date 2015-01-01
 ```
 
+Запуск локальной serving-базы PostgreSQL:
+
+```bash
+docker compose up -d postgres
+```
+
+Публикация одной Gold-даты в PostgreSQL:
+
+```bash
+DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar" \
+  uv run de-tech-radar publish-gold-postgres \
+  --date 2015-01-01
+```
+
 Локальный lakehouse для разработки использует SQLite-каталог `data/lakehouse/catalog.db`. Iceberg metadata и Parquet-файлы сохраняются в `data/lakehouse/warehouse`.
 
 Команды загрузки Bronze и Silver выводят количество записанных строк. Успешно обработанные исходные файлы отмечаются в metadata Iceberg snapshot, поэтому последовательный повторный запуск возвращает `0` и не создаёт дубликаты. Все строки одного исходного файла публикуются атомарно. Неизвестный `source_file` в Bronze вызывает ошибку вместо успешной пустой загрузки.
 
 Gold-команда полностью пересчитывает выбранную дату и атомарно заменяет соответствующую Iceberg-партицию. Повторный запуск создаёт то же итоговое состояние без дубликатов, а поздно поступившие Silver-события включаются при следующем пересчёте. Предыдущие состояния таблицы остаются доступны через историю Iceberg snapshot.
 
+## Serving-слой
+
+Docker Compose запускает PostgreSQL 18 на порту хоста `55432`, чтобы не конфликтовать с локальными установками PostgreSQL на стандартном порту. Таблица `analytics.daily_technology_activity` предоставляет Gold-метрики с первичным ключом `(technology_id, activity_date)`.
+
+Публикация заменяет все строки одной даты в единой транзакции PostgreSQL. Удаление и upsert либо фиксируются вместе, либо вместе откатываются, поэтому повторные запуски идемпотентны, а устаревшие строки предыдущего расчёта удаляются. Строка подключения передаётся через `DE_TECH_RADAR_POSTGRES_DSN`; учётные данные не хранятся в исходном коде.
+
 ## Оркестрация
 
-Dagster представляет полный дневной пайплайн как партиционированный asset `daily_technology_activity`. Каждая партиция соответствует одной UTC-дате. Asset запускается job `daily_technology_activity_job`, а `daily_technology_activity_schedule` ежедневно в 02:00 UTC выбирает последнюю завершённую партицию.
+Dagster представляет lakehouse-пайплайн как партиционированный asset `daily_technology_activity`, а последующую публикацию serving-слоя — как `postgres_daily_technology_activity`. Каждая партиция соответствует одной UTC-дате. Оба asset запускаются job `daily_technology_activity_job`, а `daily_technology_activity_schedule` ежедневно в 02:00 UTC выбирает последнюю завершённую партицию.
 
-Пути файловой системы передаются через типизированный configurable resource `RadarPaths` и разрешаются относительно корня проекта, поэтому запуск не зависит от текущей директории worker-процесса. Материализация публикует в Dagster UI metadata `archive_count`, `bronze_rows`, `silver_rows` и `gold_rows`.
+Пути файловой системы передаются через типизированный configurable resource `RadarPaths` и разрешаются относительно корня проекта, поэтому запуск не зависит от текущей директории worker-процесса. `PostgresServing` передаёт DSN и тайм-аут соединения без встраивания учётных данных в asset-код. Материализации публикуют в Dagster UI metadata `archive_count`, `bronze_rows`, `silver_rows`, `gold_rows` и `published_rows`.
 
 Проверка Dagster code location:
 
 ```bash
-uv run dg check defs
+DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar" \
+  uv run dg check defs
 ```
 
 Запуск локального Dagster UI:
 
 ```bash
-uv run dg dev
+DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar" \
+  uv run dg dev
 ```
 
-После запуска откройте `http://127.0.0.1:3000` и материализуйте партицию нужной даты. Повторная материализация `2015-01-01` записывает `0` новых Bronze- и Silver-строк и безопасно пересобирает те же две Gold-строки.
+После запуска откройте `http://127.0.0.1:3000` и материализуйте партицию нужной даты. Повторная материализация `2015-01-01` записывает `0` новых Bronze- и Silver-строк, безопасно пересобирает те же две Gold-строки и повторно публикует две PostgreSQL-строки без дубликатов.
 
 ## Качество данных
 
@@ -156,4 +181,4 @@ uv run pytest
 uv run dg check defs
 ```
 
-Те же проверки, включая валидацию Dagster definitions, выполняются в GitHub Actions для pull request и защищают ветку `main`.
+Те же проверки, включая валидацию Dagster definitions, выполняются в GitHub Actions для pull request и защищают ветку `main`. CI запускает временный PostgreSQL service и выполняет serving- и Gold-to-PostgreSQL-интеграционные тесты вместо их пропуска.
