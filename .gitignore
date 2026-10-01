@@ -225,3 +225,7 @@ __marimo__/
 
 # Tableau recovery files
 *.twbr
+
+# Local persistent Dagster instance
+/.dagster/*
+!/.dagster/dagster.yaml

@@ -155,18 +155,25 @@ Dagster exposes the lakehouse pipeline as the partitioned `daily_technology_acti
 
 Filesystem locations are supplied through the typed `RadarPaths` configurable resource and are resolved from the project root, so runs are independent of the worker process current directory. `PostgresServing` supplies the DSN and connection timeout without embedding credentials in asset code. Materializations publish `archive_count`, `bronze_rows`, `silver_rows`, `gold_rows`, and `published_rows` metadata in the Dagster UI.
 
+Both pipeline assets use the `tech_radar_pipeline` concurrency pool. The tracked `.dagster/dagster.yaml` configuration permits at most two active runs and one pipeline asset step at a time. A multi-partition backfill therefore keeps excess runs queued instead of multiplying the four concurrent hourly downloads across several dates. The persistent local Dagster instance is selected through `DAGSTER_HOME`; its runtime database and logs remain excluded from Git.
+
+For Git Bash on Windows, configure the local instance and PostgreSQL connection before starting Dagster:
+
+```bash
+export DAGSTER_HOME="$(pwd -W)/.dagster"
+export DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar"
+```
+
 Validate the Dagster code location:
 
 ```bash
-DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar" \
-  uv run dg check defs
+uv run dg check defs
 ```
 
 Start the local Dagster UI:
 
 ```bash
-DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar" \
-  uv run dg dev
+uv run dg dev
 ```
 
 Open `http://127.0.0.1:3000` and materialize a date partition. Repeating the `2015-01-01` partition writes `0` new Bronze and Silver rows, safely rebuilds the same two Gold rows, and republishes two PostgreSQL rows without duplicates.

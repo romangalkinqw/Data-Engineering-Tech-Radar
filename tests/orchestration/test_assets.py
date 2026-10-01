@@ -118,3 +118,10 @@ def test_postgres_asset_publishes_requested_partition(
 
     assert result.success
     assert published_date == date(2025, 1, 2)
+
+
+def test_pipeline_assets_share_concurrency_pool() -> None:
+    expected_pool = "tech_radar_pipeline"
+
+    assert daily_technology_activity.op.pool == expected_pool
+    assert postgres_daily_technology_activity.op.pool == expected_pool
