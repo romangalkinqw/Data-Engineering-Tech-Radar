@@ -88,6 +88,7 @@ def publish_daily_partition(
 @dg.asset(
     partitions_def=DAILY_PARTITIONS,
     group_name="tech_radar",
+    pool="tech_radar_pipeline",
 )
 def daily_technology_activity(
     context: dg.AssetExecutionContext,
@@ -114,6 +115,7 @@ def daily_technology_activity(
     partitions_def=DAILY_PARTITIONS,
     group_name="tech_radar",
     deps=[daily_technology_activity],
+    pool="tech_radar_pipeline",
 )
 def postgres_daily_technology_activity(
     context: dg.AssetExecutionContext,

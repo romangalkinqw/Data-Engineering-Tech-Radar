@@ -155,18 +155,25 @@ Dagster представляет lakehouse-пайплайн как партиц�
 
 Пути файловой системы передаются через типизированный configurable resource `RadarPaths` и разрешаются относительно корня проекта, поэтому запуск не зависит от текущей директории worker-процесса. `PostgresServing` передаёт DSN и тайм-аут соединения без встраивания учётных данных в asset-код. Материализации публикуют в Dagster UI metadata `archive_count`, `bronze_rows`, `silver_rows`, `gold_rows` и `published_rows`.
 
+Оба pipeline asset используют concurrency pool `tech_radar_pipeline`. Версионируемая конфигурация `.dagster/dagster.yaml` разрешает не более двух активных runs и одного pipeline asset step одновременно. Поэтому при backfill нескольких партиций лишние runs остаются в очереди, а четыре параллельные часовые загрузки не умножаются на несколько дат. Постоянный локальный Dagster instance выбирается через `DAGSTER_HOME`; его runtime-база и логи исключены из Git.
+
+Перед запуском Dagster в Git Bash на Windows настройте локальный instance и подключение к PostgreSQL:
+
+```bash
+export DAGSTER_HOME="$(pwd -W)/.dagster"
+export DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar"
+```
+
 Проверка Dagster code location:
 
 ```bash
-DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar" \
-  uv run dg check defs
+uv run dg check defs
 ```
 
 Запуск локального Dagster UI:
 
 ```bash
-DE_TECH_RADAR_POSTGRES_DSN="postgresql://de_tech_radar:de_tech_radar_dev@127.0.0.1:55432/de_tech_radar" \
-  uv run dg dev
+uv run dg dev
 ```
 
 После запуска откройте `http://127.0.0.1:3000` и материализуйте партицию нужной даты. Повторная материализация `2015-01-01` записывает `0` новых Bronze- и Silver-строк, безопасно пересобирает те же две Gold-строки и повторно публикует две PostgreSQL-строки без дубликатов.
