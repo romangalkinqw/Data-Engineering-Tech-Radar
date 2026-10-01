@@ -1,0 +1,1246 @@
+<?xml version='1.0' encoding='utf-8' ?>
+
+<!-- build 20262.26.0912.1023                               -->
+<workbook _.fcp.WorkbookFingerprinting.true...author-id='e2151ed52edad242cd631c2ee273bdc1911c6973e6db598342ba010b334966db' _.fcp.WorkbookFingerprinting.true...creator-author-id='e2151ed52edad242cd631c2ee273bdc1911c6973e6db598342ba010b334966db' _.fcp.WorkbookFingerprinting.true...creator-license-type='free' _.fcp.WorkbookFingerprinting.true...creator-machine-id='31bb3807bb697dd681d913538cbded13aad1ad8461a6b6a2b8b35b86d952dc83' _.fcp.WorkbookFingerprinting.true...license-type='free' _.fcp.WorkbookFingerprinting.true...machine-id='31bb3807bb697dd681d913538cbded13aad1ad8461a6b6a2b8b35b86d952dc83' original-version='18.1' source-build='2026.2.3 (20262.26.0912.1023)' source-platform='win' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <document-format-change-manifest>
+    <AccessibleZoneTabOrder />
+    <AnimationOnByDefault />
+    <AutoCreateAndUpdateDSDPhoneLayouts />
+    <IntuitiveSorting />
+    <IntuitiveSorting_SP2 />
+    <MarkAnimation />
+    <ObjectModelEncapsulateLegacy />
+    <ObjectModelTableType />
+    <SchemaViewerObjectModel />
+    <SetMembershipControl />
+    <SheetIdentifierTracking />
+    <WindowsPersistSimpleIdentifiers />
+    <_.fcp.WorkbookFingerprinting.true...WorkbookFingerprinting />
+    <ZoneBackgroundTransparency />
+  </document-format-change-manifest>
+  <preferences>
+    <preference name='ui.encoding.shelf.height' value='24' />
+    <preference name='ui.shelf.height' value='26' />
+  </preferences>
+  <style-theme name='modern' />
+  <style>
+    <style-rule element='worksheet'>
+      <format attr='font-size' value='8' />
+      <format attr='font-family' value='Tableau Semibold' />
+    </style-rule>
+    <style-rule element='all'>
+      <format attr='font-family' value='Tableau Book' />
+      <format attr='color' value='#2f3b4c' />
+    </style-rule>
+  </style>
+  <datasources>
+    <datasource caption='daily_technology_activity (analytics.daily_technology_activity) (de_tech_radar)' inline='true' name='federated.0w9x2wc1jaqdy41d934p2115da16' version='18.1'>
+      <connection class='federated'>
+        <named-connections>
+          <named-connection caption='127.0.0.1' name='postgres.04a5hkr0m4ug3g1gw77yd0jfz3qm'>
+            <connection authentication='username-password' class='postgres' dbname='de_tech_radar' odbc-native-protocol='' one-time-sql='' port='55432' server='127.0.0.1' username='de_tech_radar' />
+          </named-connection>
+        </named-connections>
+        <relation connection='postgres.04a5hkr0m4ug3g1gw77yd0jfz3qm' name='daily_technology_activity' table='[analytics].[daily_technology_activity]' type='table' />
+        <metadata-records>
+          <metadata-record class='column'>
+            <remote-name>technology_id</remote-name>
+            <remote-type>130</remote-type>
+            <local-name>[technology_id]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>technology_id</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <width>8190</width>
+            <contains-null>false</contains-null>
+            <cast-to-local-type>true</cast-to-local-type>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_WLONGVARCHAR&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_WCHAR&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>activity_date</remote-name>
+            <remote-type>7</remote-type>
+            <local-name>[activity_date]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>activity_date</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>date</local-type>
+            <aggregation>Year</aggregation>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_TYPE_DATE&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_TYPE_DATE&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>event_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[event_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>event_count</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>unique_actor_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[unique_actor_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>unique_actor_count</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>push_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[push_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>push_count</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>commit_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[commit_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>commit_count</remote-alias>
+            <ordinal>6</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>pull_request_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[pull_request_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>pull_request_count</remote-alias>
+            <ordinal>7</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>merged_pull_request_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[merged_pull_request_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>merged_pull_request_count</remote-alias>
+            <ordinal>8</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>issue_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[issue_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>issue_count</remote-alias>
+            <ordinal>9</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>star_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[star_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>star_count</remote-alias>
+            <ordinal>10</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>fork_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[fork_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>fork_count</remote-alias>
+            <ordinal>11</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>release_count</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[release_count]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>release_count</remote-alias>
+            <ordinal>12</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <precision>19</precision>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_BIGINT&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_SBIGINT&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>published_at</remote-name>
+            <remote-type>7</remote-type>
+            <local-name>[published_at]</local-name>
+            <parent-name>[daily_technology_activity]</parent-name>
+            <remote-alias>published_at</remote-alias>
+            <ordinal>13</ordinal>
+            <local-type>datetime</local-type>
+            <aggregation>Year</aggregation>
+            <contains-null>false</contains-null>
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;SQL_TYPE_TIMESTAMP&quot;</attribute>
+              <attribute datatype='string' name='DebugWireType'>&quot;SQL_C_TYPE_TIMESTAMP&quot;</attribute>
+            </attributes>
+            <object-id>[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]</object-id>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column caption='daily_technology_activity' datatype='table' name='[__tableau_internal_object_id__].[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]' role='measure' type='quantitative' />
+      <column caption='Activity Date' datatype='date' name='[activity_date]' role='dimension' type='ordinal' />
+      <column caption='Commits' datatype='integer' name='[commit_count]' role='measure' type='quantitative' />
+      <column caption='Events' datatype='integer' name='[event_count]' role='measure' type='quantitative' />
+      <column caption='Forks' datatype='integer' name='[fork_count]' role='measure' type='quantitative' />
+      <column caption='Issues' datatype='integer' name='[issue_count]' role='measure' type='quantitative' />
+      <column caption='Merged Pull Requests' datatype='integer' name='[merged_pull_request_count]' role='measure' type='quantitative' />
+      <column caption='Pull Requests' datatype='integer' name='[pull_request_count]' role='measure' type='quantitative' />
+      <column caption='Pushes' datatype='integer' name='[push_count]' role='measure' type='quantitative' />
+      <column caption='Releases' datatype='integer' name='[release_count]' role='measure' type='quantitative' />
+      <column caption='Stars' datatype='integer' name='[star_count]' role='measure' type='quantitative' />
+      <column caption='Technology' datatype='string' name='[technology_id]' role='dimension' type='nominal' />
+      <column caption='Unique Actors' datatype='integer' name='[unique_actor_count]' role='measure' type='quantitative' />
+      <column-instance column='[__tableau_internal_object_id__].[daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D]' derivation='Count' name='[__tableau_internal_object_id__].[cnt:daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[technology_id]' derivation='None' name='[none:technology_id:nk]' pivot='key' type='nominal' />
+      <column-instance column='[commit_count]' derivation='Sum' name='[sum:commit_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[event_count]' derivation='Sum' name='[sum:event_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[fork_count]' derivation='Sum' name='[sum:fork_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[issue_count]' derivation='Sum' name='[sum:issue_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[merged_pull_request_count]' derivation='Sum' name='[sum:merged_pull_request_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[pull_request_count]' derivation='Sum' name='[sum:pull_request_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[push_count]' derivation='Sum' name='[sum:push_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[release_count]' derivation='Sum' name='[sum:release_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[star_count]' derivation='Sum' name='[sum:star_count:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[unique_actor_count]' derivation='Sum' name='[sum:unique_actor_count:qk]' pivot='key' type='quantitative' />
+      <layout dim-ordering='alphabetic' measure-ordering='alphabetic' show-structure='true' />
+      <style>
+        <style-rule element='mark'>
+          <encoding attr='color' field='[none:technology_id:nk]' type='palette'>
+            <map to='#2a9d8f'>
+              <bucket>&quot;apache-flink&quot;</bucket>
+            </map>
+            <map to='#4e79a7'>
+              <bucket>&quot;apache-kafka&quot;</bucket>
+            </map>
+            <map to='#f28e2b'>
+              <bucket>&quot;apache-spark&quot;</bucket>
+            </map>
+          </encoding>
+          <encoding attr='color' field='[:Measure Names]' type='palette'>
+            <map to='#4e79a7'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[__tableau_internal_object_id__].[cnt:daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D:qk]&quot;</bucket>
+            </map>
+            <map to='#4e79a7'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:push_count:qk]&quot;</bucket>
+            </map>
+            <map to='#59a14f'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:release_count:qk]&quot;</bucket>
+            </map>
+            <map to='#76b7b2'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:fork_count:qk]&quot;</bucket>
+            </map>
+            <map to='#8cd17d'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:merged_pull_request_count:qk]&quot;</bucket>
+            </map>
+            <map to='#a0cbe8'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:commit_count:qk]&quot;</bucket>
+            </map>
+            <map to='#b07aa1'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:pull_request_count:qk]&quot;</bucket>
+            </map>
+            <map to='#e15759'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:issue_count:qk]&quot;</bucket>
+            </map>
+            <map to='#e15759'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:unique_actor_count:qk]&quot;</bucket>
+            </map>
+            <map to='#edc948'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:star_count:qk]&quot;</bucket>
+            </map>
+            <map to='#f28e2b'>
+              <bucket>&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:event_count:qk]&quot;</bucket>
+            </map>
+          </encoding>
+        </style-rule>
+      </style>
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='&quot;Russia&quot;' />
+      </semantic-values>
+      <date-options start-of-week='monday' />
+      <object-graph>
+        <objects>
+          <object caption='daily_technology_activity' id='daily_technology_activity (analytics.daily_technology_activity)_DED375352FA344A29006594D85F1EE9D'>
+            <properties context=''>
+              <relation connection='postgres.04a5hkr0m4ug3g1gw77yd0jfz3qm' name='daily_technology_activity' table='[analytics].[daily_technology_activity]' type='table' />
+            </properties>
+          </object>
+        </objects>
+      </object-graph>
+    </datasource>
+  </datasources>
+  <shared-views>
+    <shared-view name='federated.0w9x2wc1jaqdy41d934p2115da16'>
+      <datasources>
+        <datasource caption='daily_technology_activity (analytics.daily_technology_activity) (de_tech_radar)' name='federated.0w9x2wc1jaqdy41d934p2115da16' />
+      </datasources>
+      <datasource-dependencies datasource='federated.0w9x2wc1jaqdy41d934p2115da16'>
+        <column-instance column='[technology_id]' derivation='None' name='[none:technology_id:nk]' pivot='key' type='nominal' />
+        <column caption='Technology' datatype='string' name='[technology_id]' role='dimension' type='nominal' />
+      </datasource-dependencies>
+      <filter class='categorical' column='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]'>
+        <groupfilter function='level-members' level='[none:technology_id:nk]' user:ui-enumeration='all' user:ui-marker='enumerate' />
+      </filter>
+    </shared-view>
+  </shared-views>
+  <worksheets>
+    <worksheet name='Activity Trend'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='daily_technology_activity (analytics.daily_technology_activity) (de_tech_radar)' name='federated.0w9x2wc1jaqdy41d934p2115da16' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0w9x2wc1jaqdy41d934p2115da16'>
+            <column caption='Activity Date' datatype='date' name='[activity_date]' role='dimension' type='ordinal' />
+            <column caption='Events' datatype='integer' name='[event_count]' role='measure' type='quantitative' />
+            <column-instance column='[technology_id]' derivation='None' name='[none:technology_id:nk]' pivot='key' type='nominal' />
+            <column-instance column='[event_count]' derivation='Sum' name='[sum:event_count:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[activity_date]' derivation='Day-Trunc' name='[tdy:activity_date:qk]' pivot='key' type='quantitative' />
+            <column caption='Technology' datatype='string' name='[technology_id]' role='dimension' type='nominal' />
+          </datasource-dependencies>
+          <slices>
+            <column>[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='axis'>
+            <format attr='auto-subtitle' class='0' field='[federated.0w9x2wc1jaqdy41d934p2115da16].[tdy:activity_date:qk]' scope='cols' value='false' />
+            <format attr='title' class='0' field='[federated.0w9x2wc1jaqdy41d934p2115da16].[tdy:activity_date:qk]' scope='cols' value='Activity Date' />
+          </style-rule>
+          <style-rule element='legend-title-text'>
+            <format attr='color' field='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' value='Technology&#10;'>
+              <formatted-text>
+                <run>Technology&#10;</run>
+              </formatted-text>
+            </format>
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Line' />
+            <encodings>
+              <color column='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' />
+            </encodings>
+            <customized-tooltip show-buttons='false'>
+              <formatted-text>
+                <run bold='true'><![CDATA[<[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]>]]></run>
+                <run>Æ&#10;</run>
+                <run fontcolor='#000000'>&lt;Activity Date&gt;</run>
+                <run>Æ&#10;</run>
+                <run fontcolor='#757575'>Events:&#9;</run>
+                <run><![CDATA[<[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:event_count:qk]>]]></run>
+              </formatted-text>
+            </customized-tooltip>
+          </pane>
+        </panes>
+        <rows>[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:event_count:qk]</rows>
+        <cols>[federated.0w9x2wc1jaqdy41d934p2115da16].[tdy:activity_date:qk]</cols>
+      </table>
+      <simple-id uuid='{6D56E709-2C54-4F99-876D-9EB6F20E41E7}' />
+    </worksheet>
+    <worksheet name='Event Mix'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='daily_technology_activity (analytics.daily_technology_activity) (de_tech_radar)' name='federated.0w9x2wc1jaqdy41d934p2115da16' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0w9x2wc1jaqdy41d934p2115da16'>
+            <column caption='Activity Date' datatype='date' name='[activity_date]' role='dimension' type='ordinal' />
+            <column caption='Forks' datatype='integer' name='[fork_count]' role='measure' type='quantitative' />
+            <column caption='Issues' datatype='integer' name='[issue_count]' role='measure' type='quantitative' />
+            <column-instance column='[technology_id]' derivation='None' name='[none:technology_id:nk]' pivot='key' type='nominal' />
+            <column caption='Pull Requests' datatype='integer' name='[pull_request_count]' role='measure' type='quantitative' />
+            <column caption='Pushes' datatype='integer' name='[push_count]' role='measure' type='quantitative' />
+            <column caption='Releases' datatype='integer' name='[release_count]' role='measure' type='quantitative' />
+            <column caption='Stars' datatype='integer' name='[star_count]' role='measure' type='quantitative' />
+            <column-instance column='[fork_count]' derivation='Sum' name='[sum:fork_count:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[issue_count]' derivation='Sum' name='[sum:issue_count:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[pull_request_count]' derivation='Sum' name='[sum:pull_request_count:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[push_count]' derivation='Sum' name='[sum:push_count:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[release_count]' derivation='Sum' name='[sum:release_count:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[star_count]' derivation='Sum' name='[sum:star_count:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[activity_date]' derivation='Day-Trunc' name='[tdy:activity_date:qk]' pivot='key' type='quantitative' />
+            <column caption='Technology' datatype='string' name='[technology_id]' role='dimension' type='nominal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]'>
+            <groupfilter function='union' user:op='manual'>
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:fork_count:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:issue_count:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:pull_request_count:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:push_count:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:release_count:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:star_count:qk]&quot;' />
+            </groupfilter>
+          </filter>
+          <slices>
+            <column>[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]</column>
+            <column>[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='axis'>
+            <format attr='title' class='0' field='[federated.0w9x2wc1jaqdy41d934p2115da16].[tdy:activity_date:qk]' scope='cols' value='Activity Date' />
+            <format attr='auto-subtitle' class='0' field='[federated.0w9x2wc1jaqdy41d934p2115da16].[tdy:activity_date:qk]' scope='cols' value='false' />
+            <format attr='title' class='0' field='[federated.0w9x2wc1jaqdy41d934p2115da16].[Multiple Values]' scope='rows' value='Event Count' />
+          </style-rule>
+          <style-rule element='legend-title-text'>
+            <format attr='color' field='[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]' value='Event Type'>
+              <formatted-text>
+                <run>Event Type</run>
+              </formatted-text>
+            </format>
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Bar' />
+            <mark-sizing custom-mark-size-in-axis-units='1.0' mark-alignment='mark-alignment-left' mark-sizing-setting='marks-scaling-on' use-custom-mark-size='false' />
+            <encodings>
+              <color column='[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]' />
+            </encodings>
+            <customized-tooltip show-buttons='false'>
+              <formatted-text>
+                <run bold='true'><![CDATA[<[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]>]]></run>
+                <run>&#10;&lt;Activity Date&gt;&#10;</run>
+                <run bold='true'>Events</run>
+                <run><![CDATA[: <[federated.0w9x2wc1jaqdy41d934p2115da16].[Multiple Values]>]]></run>
+              </formatted-text>
+            </customized-tooltip>
+          </pane>
+        </panes>
+        <rows>[federated.0w9x2wc1jaqdy41d934p2115da16].[Multiple Values]</rows>
+        <cols>[federated.0w9x2wc1jaqdy41d934p2115da16].[tdy:activity_date:qk]</cols>
+      </table>
+      <simple-id uuid='{BF9AAFCC-126A-42C0-91E1-1CE4E7F7E97E}' />
+    </worksheet>
+    <worksheet name='Technology Ranking'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='daily_technology_activity (analytics.daily_technology_activity) (de_tech_radar)' name='federated.0w9x2wc1jaqdy41d934p2115da16' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0w9x2wc1jaqdy41d934p2115da16'>
+            <column caption='Events' datatype='integer' name='[event_count]' role='measure' type='quantitative' />
+            <column-instance column='[technology_id]' derivation='None' name='[none:technology_id:nk]' pivot='key' type='nominal' />
+            <column-instance column='[event_count]' derivation='Sum' name='[sum:event_count:qk]' pivot='key' type='quantitative' />
+            <column caption='Technology' datatype='string' name='[technology_id]' role='dimension' type='nominal' />
+          </datasource-dependencies>
+          <shelf-sorts>
+            <shelf-sort-v2 dimension-to-sort='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' direction='DESC' is-on-innermost-dimension='true' measure-to-sort-by='[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:event_count:qk]' shelf='rows' />
+          </shelf-sorts>
+          <slices>
+            <column>[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='worksheet'>
+            <format attr='display-field-labels' scope='rows' value='false' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Bar' />
+            <encodings>
+              <color column='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' />
+              <text column='[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:event_count:qk]' />
+            </encodings>
+            <customized-tooltip show-buttons='false'>
+              <formatted-text>
+                <run bold='true'><![CDATA[<[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]>]]></run>
+                <run>Æ&#10;</run>
+                <run bold='true'><![CDATA[Total events: <[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:event_count:qk]>]]></run>
+              </formatted-text>
+            </customized-tooltip>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+                <format attr='mark-labels-cull' value='true' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows>[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]</rows>
+        <cols>[federated.0w9x2wc1jaqdy41d934p2115da16].[sum:event_count:qk]</cols>
+      </table>
+      <simple-id uuid='{68C3F1C8-1B1A-40A5-A574-AD6EB50AAC4B}' />
+    </worksheet>
+  </worksheets>
+  <dashboards>
+    <dashboard enable-sort-zone-taborder='true' name='Technology Activity Overview'>
+      <layout-options>
+        <title>
+          <formatted-text>
+            <run>Data Engineering Technology Activity</run>
+          </formatted-text>
+        </title>
+      </layout-options>
+      <style />
+      <size maxheight='800' maxwidth='1200' minheight='800' minwidth='1200' sizing-mode='fixed' />
+      <datasources>
+        <datasource caption='daily_technology_activity (analytics.daily_technology_activity) (de_tech_radar)' name='federated.0w9x2wc1jaqdy41d934p2115da16' />
+      </datasources>
+      <datasource-dependencies datasource='federated.0w9x2wc1jaqdy41d934p2115da16'>
+        <column-instance column='[technology_id]' derivation='None' name='[none:technology_id:nk]' pivot='key' type='nominal' />
+        <column caption='Technology' datatype='string' name='[technology_id]' role='dimension' type='nominal' />
+      </datasource-dependencies>
+      <zones>
+        <zone h='100000' id='4' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='98000' id='17' param='vert' type-v2='layout-flow' w='98666' x='667' y='1000'>
+            <zone h='5250' id='18' type-v2='title' w='98666' x='667' y='1000'>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='92750' id='7' param='horz' type-v2='layout-flow' w='98666' x='667' y='6250'>
+              <zone h='92750' id='3' param='vert' type-v2='layout-flow' w='85333' x='667' y='6250'>
+                <zone h='36312' id='5' name='Activity Trend' w='85333' x='667' y='6250'>
+                  <layout-cache minheight='172' minwidth='149' type-h='scalable' type-w='scalable' />
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                  </zone-style>
+                </zone>
+                <zone h='20125' id='9' param='horz' type-v2='layout-flow' w='85333' x='667' y='42562'>
+                  <zone h='20125' id='10' name='Technology Ranking' w='85333' x='667' y='42562'>
+                    <layout-cache minwidth='182' type-h='cell' type-w='scalable' />
+                    <zone-style>
+                      <format attr='border-color' value='#000000' />
+                      <format attr='border-style' value='none' />
+                      <format attr='border-width' value='0' />
+                      <format attr='margin' value='4' />
+                    </zone-style>
+                  </zone>
+                </zone>
+                <zone h='36312' id='11' param='horz' type-v2='layout-flow' w='85333' x='667' y='62687'>
+                  <zone h='36312' id='12' name='Event Mix' w='85333' x='667' y='62687'>
+                    <layout-cache minheight='172' minwidth='143' type-h='scalable' type-w='scalable' />
+                    <zone-style>
+                      <format attr='border-color' value='#000000' />
+                      <format attr='border-style' value='none' />
+                      <format attr='border-width' value='0' />
+                      <format attr='margin' value='4' />
+                    </zone-style>
+                  </zone>
+                </zone>
+              </zone>
+              <zone fixed-size='160' h='92750' id='6' is-fixed='true' param='vert' type-v2='layout-flow' w='13333' x='86000' y='6250'>
+                <zone h='10500' id='8' name='Activity Trend' pane-specification-id='0' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' type-v2='color' w='13333' x='86000' y='6250'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                  </zone-style>
+                </zone>
+                <zone h='18000' id='14' name='Event Mix' pane-specification-id='0' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]' type-v2='color' w='13333' x='86000' y='16750'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                  </zone-style>
+                </zone>
+                <zone h='12750' id='15' name='Event Mix' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' type-v2='filter' values='database' w='13333' x='86000' y='34750'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                  </zone-style>
+                </zone>
+              </zone>
+            </zone>
+          </zone>
+          <zone-style>
+            <format attr='border-color' value='#000000' />
+            <format attr='border-style' value='none' />
+            <format attr='border-width' value='0' />
+            <format attr='margin' value='8' />
+          </zone-style>
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Phone'>
+          <layout-options>
+            <title>
+              <formatted-text>
+                <run>Data Engineering Technology Activity</run>
+              </formatted-text>
+            </title>
+          </layout-options>
+          <size maxheight='1000' minheight='1000' sizing-mode='vscroll' />
+          <zones>
+            <zone h='100000' id='20' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98000' id='19' param='vert' type-v2='layout-flow' w='98666' x='667' y='1000'>
+                <zone h='5250' id='18' type-v2='title' w='98666' x='667' y='1000'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='280' h='36312' id='5' is-fixed='true' name='Activity Trend' w='85333' x='667' y='6250'>
+                  <layout-cache minheight='172' minwidth='149' type-h='scalable' type-w='scalable' />
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='10500' id='8' name='Activity Trend' pane-specification-id='0' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' type-v2='color' w='13333' x='86000' y='6250'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='153' h='20125' id='10' is-fixed='true' name='Technology Ranking' w='85333' x='667' y='42562'>
+                  <layout-cache cell-count-h='3' minwidth='182' non-cell-size-h='71' type-h='cell' type-w='scalable' />
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='12750' id='15' mode='checkdropdown' name='Event Mix' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' type-v2='filter' values='database' w='13333' x='86000' y='34750'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='280' h='36312' id='12' is-fixed='true' name='Event Mix' w='85333' x='667' y='62687'>
+                  <layout-cache minheight='172' minwidth='143' type-h='scalable' type-w='scalable' />
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='18000' id='14' name='Event Mix' pane-specification-id='0' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]' type-v2='color' w='13333' x='86000' y='16750'>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+              </zone>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='8' />
+              </zone-style>
+            </zone>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+      <simple-id uuid='{970B0EB2-A827-4842-B45F-CC8192CDC6EF}' />
+    </dashboard>
+  </dashboards>
+  <windows source-height='30'>
+    <window class='worksheet' name='Activity Trend'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='right'>
+          <strip size='160'>
+            <card pane-specification-id='0' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' type='color' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]</field>
+            <field>[federated.0w9x2wc1jaqdy41d934p2115da16].[yr:activity_date:ok]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{21310B1A-38E2-4EC6-8F4A-EF7A15C1DF4C}' />
+    </window>
+    <window class='worksheet' name='Technology Ranking'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='right'>
+          <strip size='160'>
+            <card pane-specification-id='0' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' type='color' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{624695D0-FBFA-475A-B02D-150E6D42CDA1}' />
+    </window>
+    <window class='worksheet' name='Event Mix'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+            <card type='measures' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='right'>
+          <strip size='160'>
+            <card param='[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]' type='filter' />
+            <card pane-specification-id='0' param='[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]' type='color' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]</field>
+            <field>[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]</field>
+            <field>[federated.0w9x2wc1jaqdy41d934p2115da16].[yr:activity_date:ok]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{13810FC4-BD7F-476B-86CC-83F97116B626}' />
+    </window>
+    <window class='dashboard' maximized='true' name='Technology Activity Overview'>
+      <viewpoints>
+        <viewpoint name='Activity Trend'>
+          <zoom type='fit-width' />
+          <highlight>
+            <color-one-way>
+              <field>[federated.0w9x2wc1jaqdy41d934p2115da16].[none:technology_id:nk]</field>
+            </color-one-way>
+          </highlight>
+        </viewpoint>
+        <viewpoint name='Event Mix'>
+          <zoom type='entire-view' />
+          <highlight field='[federated.0w9x2wc1jaqdy41d934p2115da16].[:Measure Names]'>
+            <bucket-selection />
+          </highlight>
+        </viewpoint>
+        <viewpoint name='Technology Ranking'>
+          <zoom type='entire-view' />
+        </viewpoint>
+      </viewpoints>
+      <active id='-1' />
+      <simple-id uuid='{067048C5-DFEE-4F19-8C54-C3A1F1A9431D}' />
+    </window>
+  </windows>
+  <thumbnails>
+    <thumbnail height='192' name='Activity Trend' width='192'>
+      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
+    </thumbnail>
+    <thumbnail height='192' name='Event Mix' width='192'>
+      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
+    </thumbnail>
+    <thumbnail height='192' name='Technology Activity Overview' width='192'>
+      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
+    </thumbnail>
+    <thumbnail height='107' name='Technology Ranking' width='192'>
+      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
+      rkJggg==
+    </thumbnail>
+  </thumbnails>
+</workbook>

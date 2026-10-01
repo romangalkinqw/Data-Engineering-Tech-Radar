@@ -27,7 +27,7 @@ Dagster daily partition
   → technology catalog classification
   → date-partitioned Apache Iceberg Gold activity table
   → idempotent PostgreSQL serving table
-  → Tableau dashboards (planned)
+  → Tableau activity dashboard
 ```
 
 The Bronze layer preserves source payloads and ingestion lineage. The Silver layer provides typed, analysis-ready columns and extracts event-specific values such as:
@@ -133,6 +133,20 @@ The Gold command recomputes the complete selected date and atomically replaces i
 Docker Compose runs PostgreSQL 18 on host port `55432`, avoiding conflicts with PostgreSQL installations that use the default port. The `analytics.daily_technology_activity` table exposes the Gold metrics with `(technology_id, activity_date)` as its primary key.
 
 Publishing replaces one complete activity date in a single PostgreSQL transaction. The delete and upsert either commit together or roll back together, so retries are idempotent and stale rows from a previous calculation are removed. The connection string is supplied through `DE_TECH_RADAR_POSTGRES_DSN`; credentials are not stored in source code.
+
+## Tableau dashboard
+
+![Data Engineering Technology Activity dashboard](docs/images/technology-activity-dashboard.png)
+
+The version-controlled Tableau workbook at `tableau/data_engineering_tech_radar.twb` connects live to the PostgreSQL serving table and provides three coordinated views:
+
+- **Activity Trend** compares daily event volume by technology;
+- **Technology Ranking** ranks technologies by total activity in the selected period;
+- **Event Mix** breaks activity into pushes, pull requests, issues, stars, forks, and releases.
+
+The shared Technology filter applies to every view. The workbook stores the local server, port, database, and username required for development, but does not embed the PostgreSQL password.
+
+To use the dashboard, start PostgreSQL with `docker compose up -d postgres`, publish at least one date, and open the `.twb` file in Tableau Desktop. Connect to `127.0.0.1:55432`, database `de_tech_radar`, using the local development credentials from `compose.yaml`.
 
 ## Orchestration
 
