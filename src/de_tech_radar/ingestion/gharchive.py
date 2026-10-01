@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -5,6 +6,7 @@ from pathlib import Path
 import httpx
 
 GH_ARCHIVE_BASE_URL = "https://data.gharchive.org"
+_LOGGER = logging.getLogger(__name__)
 
 
 def build_archive_url(archive_hour: datetime) -> str:
@@ -95,12 +97,32 @@ def download_archive(
                 is_retryable_status = status_code == 429 or 500 <= status_code < 600
 
                 if not is_retryable_status:
+                    _LOGGER.error(
+                        ("GH Archive download failed url=%s attempts=%d error=%s"),
+                        archive_url,
+                        attempt_number,
+                        type(error).__name__,
+                    )
                     raise
 
             if attempt_number == max_attempts:
+                _LOGGER.error(
+                    ("GH Archive download failed url=%s attempts=%d error=%s"),
+                    archive_url,
+                    attempt_number,
+                    type(error).__name__,
+                )
                 raise
 
             delay_seconds = retry_backoff_seconds * (2 ** (attempt_number - 1))
+            _LOGGER.warning(
+                ("Retrying GH Archive download url=%s attempt=%d/%d delay_seconds=%g error=%s"),
+                archive_url,
+                attempt_number,
+                max_attempts,
+                delay_seconds,
+                type(error).__name__,
+            )
             time.sleep(delay_seconds)
 
         finally:

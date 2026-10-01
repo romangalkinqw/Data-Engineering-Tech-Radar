@@ -3,3 +3,8 @@ concurrency:
     max_concurrent_runs: 2
   pools:
     default_limit: 1
+
+python_logs:
+  managed_python_loggers:
+    - de_tech_radar.ingestion.gharchive
+  python_log_level: WARNING
