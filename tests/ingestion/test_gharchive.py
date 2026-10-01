@@ -132,7 +132,170 @@ def test_download_archive_removes_partial_file_after_stream_error(
                 archive_hour=archive_hour,
                 raw_root=tmp_path,
                 client=client,
+                retry_backoff_seconds=0,
             )
 
     assert not archive_path.exists()
     assert not partial_path.exists(), "partial file must be removed"
+
+
+def test_download_archive_retries_connect_timeout(
+    tmp_path: Path,
+) -> None:
+    archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
+    archive_bytes = gzip.compress(b'{"type":"PushEvent"}\n')
+    attempt_count = 0
+
+    def handle_request(
+        request: httpx.Request,
+    ) -> httpx.Response:
+        nonlocal attempt_count
+        attempt_count += 1
+
+        if attempt_count < 3:
+            raise httpx.ConnectTimeout(
+                "connection timed out",
+                request=request,
+            )
+
+        return httpx.Response(
+            200,
+            stream=httpx.ByteStream(archive_bytes),
+        )
+
+    transport = httpx.MockTransport(handle_request)
+
+    with httpx.Client(transport=transport) as client:
+        downloaded_path = download_archive(
+            archive_hour=archive_hour,
+            raw_root=tmp_path,
+            client=client,
+            max_attempts=3,
+            retry_backoff_seconds=0,
+        )
+
+    assert attempt_count == 3
+    assert downloaded_path.read_bytes() == archive_bytes
+
+
+def test_download_archive_retries_server_error(
+    tmp_path: Path,
+) -> None:
+    archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
+    archive_bytes = gzip.compress(b'{"type":"PushEvent"}\n')
+    attempt_count = 0
+
+    def handle_request(
+        request: httpx.Request,
+    ) -> httpx.Response:
+        nonlocal attempt_count
+        attempt_count += 1
+
+        if attempt_count == 1:
+            return httpx.Response(
+                503,
+                request=request,
+            )
+
+        return httpx.Response(
+            200,
+            stream=httpx.ByteStream(archive_bytes),
+        )
+
+    transport = httpx.MockTransport(handle_request)
+
+    with httpx.Client(transport=transport) as client:
+        downloaded_path = download_archive(
+            archive_hour=archive_hour,
+            raw_root=tmp_path,
+            client=client,
+            max_attempts=2,
+            retry_backoff_seconds=0,
+        )
+
+    assert attempt_count == 2
+    assert downloaded_path.read_bytes() == archive_bytes
+
+
+def test_download_archive_does_not_retry_not_found(
+    tmp_path: Path,
+) -> None:
+    archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
+    attempt_count = 0
+
+    def handle_request(
+        request: httpx.Request,
+    ) -> httpx.Response:
+        nonlocal attempt_count
+        attempt_count += 1
+
+        return httpx.Response(
+            404,
+            request=request,
+        )
+
+    transport = httpx.MockTransport(handle_request)
+
+    with httpx.Client(transport=transport) as client:
+        with pytest.raises(
+            httpx.HTTPStatusError,
+            match="404",
+        ):
+            download_archive(
+                archive_hour=archive_hour,
+                raw_root=tmp_path,
+                client=client,
+                max_attempts=3,
+                retry_backoff_seconds=0,
+            )
+
+    assert attempt_count == 1
+
+
+def test_download_archive_stops_after_max_attempts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
+    archive_path = build_archive_path(
+        tmp_path,
+        archive_hour,
+    )
+    partial_path = archive_path.with_name(f"{archive_path.name}.part")
+    attempt_count = 0
+    delays: list[float] = []
+
+    def handle_request(
+        request: httpx.Request,
+    ) -> httpx.Response:
+        nonlocal attempt_count
+        attempt_count += 1
+
+        raise httpx.ConnectTimeout(
+            "connection timed out",
+            request=request,
+        )
+
+    monkeypatch.setattr(
+        "de_tech_radar.ingestion.gharchive.time.sleep",
+        delays.append,
+    )
+    transport = httpx.MockTransport(handle_request)
+
+    with httpx.Client(transport=transport) as client:
+        with pytest.raises(
+            httpx.ConnectTimeout,
+            match="connection timed out",
+        ):
+            download_archive(
+                archive_hour=archive_hour,
+                raw_root=tmp_path,
+                client=client,
+                max_attempts=3,
+                retry_backoff_seconds=0.25,
+            )
+
+    assert attempt_count == 3
+    assert delays == [0.25, 0.5]
+    assert not archive_path.exists()
+    assert not partial_path.exists()

@@ -1,3 +1,4 @@
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -46,9 +47,21 @@ def download_archive(
     archive_hour: datetime,
     raw_root: Path,
     client: httpx.Client,
+    *,
+    max_attempts: int = 3,
+    retry_backoff_seconds: float = 1.0,
 ) -> Path:
     """Download one GH Archive hour into the raw zone."""
-    archive_path = build_archive_path(raw_root, archive_hour)
+    if max_attempts < 1:
+        raise ValueError("max_attempts must be at least 1")
+
+    if retry_backoff_seconds < 0:
+        raise ValueError("retry_backoff_seconds must be non-negative")
+
+    archive_path = build_archive_path(
+        raw_root,
+        archive_hour,
+    )
 
     if archive_path.exists():
         return archive_path
@@ -58,16 +71,39 @@ def download_archive(
 
     archive_path.parent.mkdir(parents=True, exist_ok=True)
 
-    try:
-        with client.stream("GET", archive_url) as response:
-            response.raise_for_status()
+    for attempt_number in range(1, max_attempts + 1):
+        try:
+            with client.stream(
+                "GET",
+                archive_url,
+            ) as response:
+                response.raise_for_status()
 
-            with temporary_path.open("wb") as output_file:
-                for chunk in response.iter_raw():
-                    output_file.write(chunk)
+                with temporary_path.open("wb") as output_file:
+                    for chunk in response.iter_raw():
+                        output_file.write(chunk)
 
-        temporary_path.replace(archive_path)
-    finally:
-        temporary_path.unlink(missing_ok=True)
+            temporary_path.replace(archive_path)
+            return archive_path
+        except (
+            httpx.TimeoutException,
+            httpx.NetworkError,
+            httpx.HTTPStatusError,
+        ) as error:
+            if isinstance(error, httpx.HTTPStatusError):
+                status_code = error.response.status_code
+                is_retryable_status = status_code == 429 or 500 <= status_code < 600
 
-    return archive_path
+                if not is_retryable_status:
+                    raise
+
+            if attempt_number == max_attempts:
+                raise
+
+            delay_seconds = retry_backoff_seconds * (2 ** (attempt_number - 1))
+            time.sleep(delay_seconds)
+
+        finally:
+            temporary_path.unlink(missing_ok=True)
+
+    raise AssertionError("retry loop finished unexpectedly")
