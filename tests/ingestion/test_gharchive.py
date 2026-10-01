@@ -1,4 +1,5 @@
 import gzip
+import logging
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
@@ -56,9 +57,14 @@ def test_build_archive_path_uses_hive_partitions(tmp_path: Path) -> None:
 
 def test_download_archive_writes_raw_response(
     tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
     archive_bytes = gzip.compress(b'{"type":"PushEvent"}\n')
+    caplog.set_level(
+        logging.WARNING,
+        logger="de_tech_radar.ingestion.gharchive",
+    )
 
     def handle_request(request: httpx.Request) -> httpx.Response:
         assert request.method == "GET"
@@ -81,6 +87,7 @@ def test_download_archive_writes_raw_response(
 
     assert downloaded_path == expected_path
     assert expected_path.read_bytes() == archive_bytes
+    assert caplog.messages == []
 
 
 def test_download_archive_does_not_overwrite_existing_file(
@@ -141,6 +148,7 @@ def test_download_archive_removes_partial_file_after_stream_error(
 
 def test_download_archive_retries_connect_timeout(
     tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
     archive_bytes = gzip.compress(b'{"type":"PushEvent"}\n')
@@ -163,6 +171,11 @@ def test_download_archive_retries_connect_timeout(
             stream=httpx.ByteStream(archive_bytes),
         )
 
+    caplog.set_level(
+        logging.WARNING,
+        logger="de_tech_radar.ingestion.gharchive",
+    )
+
     transport = httpx.MockTransport(handle_request)
 
     with httpx.Client(transport=transport) as client:
@@ -176,6 +189,22 @@ def test_download_archive_retries_connect_timeout(
 
     assert attempt_count == 3
     assert downloaded_path.read_bytes() == archive_bytes
+    assert caplog.messages == [
+        (
+            "Retrying GH Archive download "
+            "url=https://data.gharchive.org/"
+            "2025-01-02-3.json.gz "
+            "attempt=1/3 delay_seconds=0 "
+            "error=ConnectTimeout"
+        ),
+        (
+            "Retrying GH Archive download "
+            "url=https://data.gharchive.org/"
+            "2025-01-02-3.json.gz "
+            "attempt=2/3 delay_seconds=0 "
+            "error=ConnectTimeout"
+        ),
+    ]
 
 
 def test_download_archive_retries_server_error(
@@ -219,6 +248,7 @@ def test_download_archive_retries_server_error(
 
 def test_download_archive_does_not_retry_not_found(
     tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
     attempt_count = 0
@@ -236,6 +266,11 @@ def test_download_archive_does_not_retry_not_found(
 
     transport = httpx.MockTransport(handle_request)
 
+    caplog.set_level(
+        logging.ERROR,
+        logger="de_tech_radar.ingestion.gharchive",
+    )
+
     with httpx.Client(transport=transport) as client:
         with pytest.raises(
             httpx.HTTPStatusError,
@@ -250,11 +285,20 @@ def test_download_archive_does_not_retry_not_found(
             )
 
     assert attempt_count == 1
+    assert caplog.messages == [
+        (
+            "GH Archive download failed "
+            "url=https://data.gharchive.org/"
+            "2025-01-02-3.json.gz "
+            "attempts=1 error=HTTPStatusError"
+        )
+    ]
 
 
 def test_download_archive_stops_after_max_attempts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
     archive_path = build_archive_path(
@@ -282,6 +326,11 @@ def test_download_archive_stops_after_max_attempts(
     )
     transport = httpx.MockTransport(handle_request)
 
+    caplog.set_level(
+        logging.ERROR,
+        logger="de_tech_radar.ingestion.gharchive",
+    )
+
     with httpx.Client(transport=transport) as client:
         with pytest.raises(
             httpx.ConnectTimeout,
@@ -299,3 +348,11 @@ def test_download_archive_stops_after_max_attempts(
     assert delays == [0.25, 0.5]
     assert not archive_path.exists()
     assert not partial_path.exists()
+    assert caplog.messages == [
+        (
+            "GH Archive download failed "
+            "url=https://data.gharchive.org/"
+            "2025-01-02-3.json.gz "
+            "attempts=3 error=ConnectTimeout"
+        )
+    ]

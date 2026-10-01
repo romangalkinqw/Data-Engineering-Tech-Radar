@@ -157,6 +157,8 @@ Filesystem locations are supplied through the typed `RadarPaths` configurable re
 
 Both pipeline assets use the `tech_radar_pipeline` concurrency pool. The tracked `.dagster/dagster.yaml` configuration permits at most two active runs and one pipeline asset step at a time. A multi-partition backfill therefore keeps excess runs queued instead of multiplying the four concurrent hourly downloads across several dates. The persistent local Dagster instance is selected through `DAGSTER_HOME`; its runtime database and logs remain excluded from Git.
 
+Transient GH Archive failures are retried with bounded exponential backoff. Each scheduled retry is logged at `WARNING` with the URL, attempt number, delay, and error type; exhausted or permanent failures are logged at `ERROR`. The module logger is managed through `dagster.yaml`, so these messages appear in the Dagster event log for the corresponding run and step. Successful first-attempt downloads remain silent.
+
 For Git Bash on Windows, configure the local instance and PostgreSQL connection before starting Dagster:
 
 ```bash
