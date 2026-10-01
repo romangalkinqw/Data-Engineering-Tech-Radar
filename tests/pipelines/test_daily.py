@@ -1,9 +1,12 @@
+import asyncio
 import gzip
 import json
 from datetime import UTC, date, datetime
 from pathlib import Path
+from threading import Event, Lock
 
 import httpx
+import pytest
 
 from de_tech_radar.lakehouse.catalog import open_local_catalog
 from de_tech_radar.lakehouse.tables import (
@@ -14,6 +17,7 @@ from de_tech_radar.lakehouse.tables import (
 from de_tech_radar.pipelines.daily import (
     DailyPipelineResult,
     build_archive_hours,
+    download_archive_hours,
     run_archive_hours,
 )
 from de_tech_radar.technologies.catalog import Technology
@@ -134,3 +138,66 @@ def test_run_archive_hours_executes_complete_pipeline(
         assert bronze_table.scan().count() == 1
         assert silver_table.scan().count() == 1
         assert gold_table.scan().count() == 1
+
+
+def test_download_archive_hours_limits_concurrency(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archive_hours = build_archive_hours(date(2025, 1, 2))[:4]
+    active_downloads = 0
+    max_active_downloads = 0
+    release_downloads = Event()
+    counter_lock = Lock()
+
+    def fake_download_archive(
+        *,
+        archive_hour: datetime,
+        raw_root: Path,
+        client: httpx.Client,
+    ) -> Path:
+        nonlocal active_downloads
+        nonlocal max_active_downloads
+
+        del raw_root, client
+
+        with counter_lock:
+            active_downloads += 1
+            max_active_downloads = max(
+                max_active_downloads,
+                active_downloads,
+            )
+
+            if active_downloads == 2:
+                release_downloads.set()
+
+        if not release_downloads.wait(timeout=1):
+            raise AssertionError("concurrent downloads did not start")
+
+        with counter_lock:
+            active_downloads -= 1
+
+        return Path(f"{archive_hour.hour}.json.gz")
+
+    monkeypatch.setattr(
+        "de_tech_radar.pipelines.daily.download_archive",
+        fake_download_archive,
+    )
+
+    with httpx.Client() as client:
+        archive_paths = asyncio.run(
+            download_archive_hours(
+                archive_hours=archive_hours,
+                raw_root=tmp_path,
+                client=client,
+                max_concurrency=2,
+            )
+        )
+
+    assert max_active_downloads == 2
+    assert tuple(path.name for path in archive_paths) == (
+        "0.json.gz",
+        "1.json.gz",
+        "2.json.gz",
+        "3.json.gz",
+    )

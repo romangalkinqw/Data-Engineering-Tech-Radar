@@ -59,10 +59,11 @@ Run the complete Raw-to-Gold pipeline for one UTC day:
 
 ```bash
 uv run de-tech-radar run-gharchive-day \
-  --date 2015-01-01
+  --date 2015-01-01 \
+  --download-concurrency 4
 ```
 
-The command expands the date into 24 hourly GH Archive deliveries, processes every hour through Raw, Bronze, and Silver, and then atomically rebuilds the Gold date partition. It prints an operational summary:
+The command expands the date into 24 hourly GH Archive deliveries, downloads Raw files with bounded concurrency, processes every hour sequentially through Bronze and Silver, and then atomically rebuilds the Gold date partition. `--download-concurrency` defaults to `4`, limiting network pressure while allowing independent hourly downloads to overlap. It prints an operational summary:
 
 ```text
 DailyPipelineResult(archive_count=24, bronze_rows=218939, silver_rows=218939, gold_rows=2)

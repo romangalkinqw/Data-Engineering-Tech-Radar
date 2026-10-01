@@ -387,6 +387,8 @@ def test_parse_run_gharchive_day_command() -> None:
             "run-gharchive-day",
             "--date",
             "2025-01-02",
+            "--download-concurrency",
+            "3",
         ]
     )
 
@@ -400,6 +402,7 @@ def test_parse_run_gharchive_day_command() -> None:
     assert arguments.technology_catalog_path == Path("config/technologies.toml")
     assert arguments.catalog_path == Path("data/lakehouse/catalog.db")
     assert arguments.warehouse_path == Path("data/lakehouse/warehouse")
+    assert arguments.download_concurrency == 3
 
 
 def test_execute_run_gharchive_day_command(
@@ -434,6 +437,7 @@ repositories = ["apache/airflow"]
     ) -> DailyPipelineResult:
         assert arguments["activity_date"] == target_date
         assert arguments["raw_root"] == raw_root
+        assert arguments["max_download_concurrency"] == 3
 
         return expected_result
 
@@ -449,6 +453,8 @@ repositories = ["apache/airflow"]
             "run-gharchive-day",
             "--date",
             target_date.isoformat(),
+            "--download-concurrency",
+            "3",
             "--raw-root",
             str(raw_root),
             "--technology-catalog",

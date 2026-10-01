@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -43,8 +44,37 @@ def build_archive_hours(
     )
 
 
+async def download_archive_hours(
+    *,
+    archive_hours: Iterable[datetime],
+    raw_root: Path,
+    client: httpx.Client,
+    max_concurrency: int = 4,
+) -> tuple[Path, ...]:
+    """Download archive hours with bounded concurrency."""
+    if max_concurrency < 1:
+        raise ValueError("max_concurrency must be at least 1")
+
+    hours = tuple(archive_hours)
+    semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def download_one(
+        archive_hour: datetime,
+    ) -> Path:
+        async with semaphore:
+            return await asyncio.to_thread(
+                download_archive,
+                archive_hour=archive_hour,
+                raw_root=raw_root,
+                client=client,
+            )
+
+    return tuple(await asyncio.gather(*(download_one(archive_hour) for archive_hour in hours)))
+
+
 def run_archive_hours(
     *,
+    max_download_concurrency: int = 4,
     archive_hours: Iterable[datetime],
     raw_root: Path,
     bronze_table: Table,
@@ -71,12 +101,20 @@ def run_archive_hours(
     bronze_rows = 0
     silver_rows = 0
 
-    for archive_hour in hours:
-        archive_path = download_archive(
-            archive_hour=archive_hour,
+    archive_paths = asyncio.run(
+        download_archive_hours(
+            archive_hours=hours,
             raw_root=raw_root,
             client=client,
+            max_concurrency=max_download_concurrency,
         )
+    )
+
+    for archive_hour, archive_path in zip(
+        hours,
+        archive_paths,
+        strict=True,
+    ):
         bronze_rows += load_archive_to_bronze(
             archive_path=archive_path,
             archive_hour=archive_hour,
@@ -105,6 +143,7 @@ def run_archive_hours(
 
 def run_daily_pipeline(
     *,
+    max_download_concurrency: int = 4,
     activity_date: date,
     raw_root: Path,
     bronze_table: Table,
@@ -115,6 +154,7 @@ def run_daily_pipeline(
 ) -> DailyPipelineResult:
     """Run the complete Raw-to-Gold pipeline for one UTC day."""
     return run_archive_hours(
+        max_download_concurrency=max_download_concurrency,
         archive_hours=build_archive_hours(activity_date),
         raw_root=raw_root,
         bronze_table=bronze_table,

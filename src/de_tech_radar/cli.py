@@ -189,6 +189,12 @@ def parse_args(
         help="Root directory of the raw data zone",
     )
     run_day_parser.add_argument(
+        "--download-concurrency",
+        type=int,
+        default=4,
+        help=("Maximum number of concurrent GH Archive downloads"),
+    )
+    run_day_parser.add_argument(
         "--technology-catalog",
         dest="technology_catalog_path",
         type=Path,
@@ -366,6 +372,10 @@ def execute_command(
                 silver_table=silver_table,
                 gold_table=gold_table,
                 technologies=technologies,
+                max_download_concurrency=cast(
+                    int,
+                    arguments.download_concurrency,
+                ),
                 client=client,
             )
     raise ValueError(f"unsupported command: {arguments.command}")
