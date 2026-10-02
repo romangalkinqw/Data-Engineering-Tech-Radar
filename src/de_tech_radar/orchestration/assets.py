@@ -107,6 +107,10 @@ def daily_technology_activity(
             "bronze_rows": result.bronze_rows,
             "silver_rows": result.silver_rows,
             "gold_rows": result.gold_rows,
+            "downloaded_archive_count": result.downloaded_archive_count,
+            "reused_archive_count": result.reused_archive_count,
+            "download_retry_count": result.download_retry_count,
+            "download_duration_seconds": result.download_duration_seconds,
         }
     )
 

@@ -1,5 +1,6 @@
 import logging
 import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -7,6 +8,15 @@ import httpx
 
 GH_ARCHIVE_BASE_URL = "https://data.gharchive.org"
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class ArchiveDownloadResult:
+    """Operational result of one archive download."""
+
+    path: Path
+    downloaded: bool
+    retry_count: int
 
 
 def build_archive_url(archive_hour: datetime) -> str:
@@ -45,14 +55,14 @@ def _archive_filename(utc_hour: datetime) -> str:
     return f"{utc_hour:%Y-%m-%d}-{utc_hour.hour}.json.gz"
 
 
-def download_archive(
+def download_archive_with_metrics(
     archive_hour: datetime,
     raw_root: Path,
     client: httpx.Client,
     *,
     max_attempts: int = 3,
     retry_backoff_seconds: float = 1.0,
-) -> Path:
+) -> ArchiveDownloadResult:
     """Download one GH Archive hour into the raw zone."""
     if max_attempts < 1:
         raise ValueError("max_attempts must be at least 1")
@@ -66,7 +76,11 @@ def download_archive(
     )
 
     if archive_path.exists():
-        return archive_path
+        return ArchiveDownloadResult(
+            path=archive_path,
+            downloaded=False,
+            retry_count=0,
+        )
 
     archive_url = build_archive_url(archive_hour)
     temporary_path = archive_path.with_name(f"{archive_path.name}.part")
@@ -86,7 +100,11 @@ def download_archive(
                         output_file.write(chunk)
 
             temporary_path.replace(archive_path)
-            return archive_path
+            return ArchiveDownloadResult(
+                path=archive_path,
+                downloaded=True,
+                retry_count=attempt_number - 1,
+            )
         except (
             httpx.TimeoutException,
             httpx.NetworkError,
@@ -129,3 +147,23 @@ def download_archive(
             temporary_path.unlink(missing_ok=True)
 
     raise AssertionError("retry loop finished unexpectedly")
+
+
+def download_archive(
+    archive_hour: datetime,
+    raw_root: Path,
+    client: httpx.Client,
+    *,
+    max_attempts: int = 3,
+    retry_backoff_seconds: float = 1.0,
+) -> Path:
+    """Download one GH Archive hour into the raw zone."""
+    result = download_archive_with_metrics(
+        archive_hour=archive_hour,
+        raw_root=raw_root,
+        client=client,
+        max_attempts=max_attempts,
+        retry_backoff_seconds=retry_backoff_seconds,
+    )
+
+    return result.path

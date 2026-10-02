@@ -8,6 +8,9 @@ from threading import Event, Lock
 import httpx
 import pytest
 
+from de_tech_radar.ingestion.gharchive import (
+    ArchiveDownloadResult,
+)
 from de_tech_radar.lakehouse.catalog import open_local_catalog
 from de_tech_radar.lakehouse.tables import (
     ensure_bronze_events_table,
@@ -128,13 +131,28 @@ def test_run_archive_hours_executes_complete_pipeline(
             bronze_rows=1,
             silver_rows=1,
             gold_rows=1,
+            downloaded_archive_count=1,
+            reused_archive_count=0,
+            download_retry_count=0,
         )
         assert retry_result == DailyPipelineResult(
             archive_count=1,
             bronze_rows=0,
             silver_rows=0,
             gold_rows=1,
+            downloaded_archive_count=0,
+            reused_archive_count=1,
+            download_retry_count=0,
         )
+        assert result.downloaded_archive_count == 1
+        assert result.reused_archive_count == 0
+        assert result.download_retry_count == 0
+        assert result.download_duration_seconds >= 0
+
+        assert retry_result.downloaded_archive_count == 0
+        assert retry_result.reused_archive_count == 1
+        assert retry_result.download_retry_count == 0
+        assert retry_result.download_duration_seconds >= 0
         assert bronze_table.scan().count() == 1
         assert silver_table.scan().count() == 1
         assert gold_table.scan().count() == 1
@@ -155,7 +173,7 @@ def test_download_archive_hours_limits_concurrency(
         archive_hour: datetime,
         raw_root: Path,
         client: httpx.Client,
-    ) -> Path:
+    ) -> ArchiveDownloadResult:
         nonlocal active_downloads
         nonlocal max_active_downloads
 
@@ -177,15 +195,19 @@ def test_download_archive_hours_limits_concurrency(
         with counter_lock:
             active_downloads -= 1
 
-        return Path(f"{archive_hour.hour}.json.gz")
+        return ArchiveDownloadResult(
+            path=Path(f"{archive_hour.hour}.json.gz"),
+            downloaded=True,
+            retry_count=0,
+        )
 
     monkeypatch.setattr(
-        "de_tech_radar.pipelines.daily.download_archive",
+        ("de_tech_radar.pipelines.daily.download_archive_with_metrics"),
         fake_download_archive,
     )
 
     with httpx.Client() as client:
-        archive_paths = asyncio.run(
+        archive_results = asyncio.run(
             download_archive_hours(
                 archive_hours=archive_hours,
                 raw_root=tmp_path,
@@ -195,9 +217,10 @@ def test_download_archive_hours_limits_concurrency(
         )
 
     assert max_active_downloads == 2
-    assert tuple(path.name for path in archive_paths) == (
+    assert tuple(result.path.name for result in archive_results) == (
         "0.json.gz",
         "1.json.gz",
         "2.json.gz",
         "3.json.gz",
     )
+    assert all(result.downloaded for result in archive_results)

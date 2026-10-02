@@ -42,6 +42,10 @@ def test_daily_activity_asset_runs_requested_partition(
             bronze_rows=100,
             silver_rows=100,
             gold_rows=2,
+            downloaded_archive_count=20,
+            reused_archive_count=4,
+            download_retry_count=3,
+            download_duration_seconds=12.5,
         )
 
     monkeypatch.setattr(
@@ -58,6 +62,20 @@ def test_daily_activity_asset_runs_requested_partition(
 
     assert result.success
     assert observed_date == date(2025, 1, 2)
+
+    materialization = result.asset_materializations_for_node("daily_technology_activity")[0]
+    metadata = {key: value.value for key, value in materialization.metadata.items()}
+
+    assert metadata == {
+        "archive_count": 24,
+        "bronze_rows": 100,
+        "silver_rows": 100,
+        "gold_rows": 2,
+        "downloaded_archive_count": 20,
+        "reused_archive_count": 4,
+        "download_retry_count": 3,
+        "download_duration_seconds": 12.5,
+    }
 
 
 def test_postgres_asset_publishes_requested_partition(
