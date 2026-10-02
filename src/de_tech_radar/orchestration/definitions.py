@@ -5,6 +5,7 @@ from de_tech_radar.orchestration.assets import (
     postgres_daily_technology_activity,
 )
 from de_tech_radar.orchestration.checks import (
+    complete_archive_hours,
     unique_gold_keys,
     valid_gold_metrics,
 )
@@ -34,6 +35,7 @@ defs = dg.Definitions(
         postgres_daily_technology_activity,
     ],
     asset_checks=[
+        complete_archive_hours,
         unique_gold_keys,
         valid_gold_metrics,
     ],

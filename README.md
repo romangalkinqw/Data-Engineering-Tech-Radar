@@ -153,7 +153,7 @@ To use the dashboard, start PostgreSQL with `docker compose up -d postgres`, pub
 
 Dagster exposes the lakehouse pipeline as the partitioned `daily_technology_activity` asset and the downstream serving publication as `postgres_daily_technology_activity`. Each partition represents one UTC date. Both assets are executed by `daily_technology_activity_job`, and `daily_technology_activity_schedule` targets the latest completed partition every day at 02:00 UTC.
 
-Filesystem locations are supplied through the typed `RadarPaths` configurable resource and are resolved from the project root, so runs are independent of the worker process current directory. `PostgresServing` supplies the DSN and connection timeout without embedding credentials in asset code. Materializations publish `archive_count`, `bronze_rows`, `silver_rows`, `gold_rows`, and `published_rows` metadata in the Dagster UI.
+Filesystem locations are supplied through the typed `RadarPaths` configurable resource and are resolved from the project root, so runs are independent of the worker process current directory. `PostgresServing` supplies the DSN and connection timeout without embedding credentials in asset code. Materializations publish row counts together with Raw download observability metadata: downloaded and reused archive counts, aggregate retry count, and download duration.
 
 Both pipeline assets use the `tech_radar_pipeline` concurrency pool. The tracked `.dagster/dagster.yaml` configuration permits at most two active runs and one pipeline asset step at a time. A multi-partition backfill therefore keeps excess runs queued instead of multiplying the four concurrent hourly downloads across several dates. The persistent local Dagster instance is selected through `DAGSTER_HOME`; its runtime database and logs remain excluded from Git.
 
@@ -184,10 +184,11 @@ Open `http://127.0.0.1:3000` and materialize a date partition. Repeating the `20
 
 Blocking Dagster Asset Checks validate every materialized Gold result:
 
+- `complete_archive_hours` requires all 24 UTC archive hours to be present in the selected Silver date partition and reports missing hours as metadata;
 - `unique_gold_keys` requires at most one row per `(technology_id, activity_date)` business key;
 - `valid_gold_metrics` rejects negative counters and inconsistent relationships, including unique actors exceeding total events, merged pull requests exceeding pull requests, or event subtype counts exceeding total events.
 
-Each check reads only the selected Gold date and publishes row and violation counts as Dagster metadata. For the `2015-01-01` materialization, both checks pass with two Gold rows, zero duplicate keys, and zero invalid metric rows. A failed blocking check marks the run unsuccessful instead of silently exposing invalid data to downstream BI consumers.
+Each check reads only the selected Silver or Gold date and publishes coverage, row, and violation counts as Dagster metadata. For the `2015-01-01` materialization, all checks pass with 24 present archive hours, two Gold rows, zero duplicate keys, and zero invalid metric rows. A failed blocking check marks the run unsuccessful instead of silently exposing incomplete or invalid data to downstream BI consumers.
 
 ## Technology catalog
 
