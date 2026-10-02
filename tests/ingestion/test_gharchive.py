@@ -8,9 +8,11 @@ import httpx
 import pytest
 
 from de_tech_radar.ingestion.gharchive import (
+    ArchiveDownloadResult,
     build_archive_path,
     build_archive_url,
     download_archive,
+    download_archive_with_metrics,
 )
 
 
@@ -77,7 +79,7 @@ def test_download_archive_writes_raw_response(
     transport = httpx.MockTransport(handle_request)
 
     with httpx.Client(transport=transport) as client:
-        downloaded_path = download_archive(
+        result = download_archive_with_metrics(
             archive_hour=archive_hour,
             raw_root=tmp_path,
             client=client,
@@ -85,7 +87,11 @@ def test_download_archive_writes_raw_response(
 
     expected_path = build_archive_path(tmp_path, archive_hour)
 
-    assert downloaded_path == expected_path
+    assert result == ArchiveDownloadResult(
+        path=expected_path,
+        downloaded=True,
+        retry_count=0,
+    )
     assert expected_path.read_bytes() == archive_bytes
     assert caplog.messages == []
 
@@ -179,7 +185,7 @@ def test_download_archive_retries_connect_timeout(
     transport = httpx.MockTransport(handle_request)
 
     with httpx.Client(transport=transport) as client:
-        downloaded_path = download_archive(
+        result = download_archive_with_metrics(
             archive_hour=archive_hour,
             raw_root=tmp_path,
             client=client,
@@ -188,7 +194,9 @@ def test_download_archive_retries_connect_timeout(
         )
 
     assert attempt_count == 3
-    assert downloaded_path.read_bytes() == archive_bytes
+    assert result.downloaded is True
+    assert result.retry_count == 2
+    assert result.path.read_bytes() == archive_bytes
     assert caplog.messages == [
         (
             "Retrying GH Archive download "
@@ -356,3 +364,71 @@ def test_download_archive_stops_after_max_attempts(
             "attempts=3 error=ConnectTimeout"
         )
     ]
+
+
+def test_download_archive_with_metrics_reports_new_file(
+    tmp_path: Path,
+) -> None:
+    archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
+    archive_bytes = gzip.compress(b'{"type":"PushEvent"}\n')
+
+    def handle_request(
+        _: httpx.Request,
+    ) -> httpx.Response:
+        return httpx.Response(
+            200,
+            stream=httpx.ByteStream(archive_bytes),
+        )
+
+    transport = httpx.MockTransport(handle_request)
+
+    with httpx.Client(transport=transport) as client:
+        result = download_archive_with_metrics(
+            archive_hour=archive_hour,
+            raw_root=tmp_path,
+            client=client,
+        )
+
+    expected_path = build_archive_path(
+        tmp_path,
+        archive_hour,
+    )
+
+    assert result == ArchiveDownloadResult(
+        path=expected_path,
+        downloaded=True,
+        retry_count=0,
+    )
+    assert expected_path.read_bytes() == archive_bytes
+
+
+def test_download_archive_with_metrics_reports_reused_file(
+    tmp_path: Path,
+) -> None:
+    archive_hour = datetime(2025, 1, 2, 3, tzinfo=UTC)
+    archive_path = build_archive_path(
+        tmp_path,
+        archive_hour,
+    )
+    archive_path.parent.mkdir(parents=True)
+    archive_path.write_bytes(b"existing archive")
+
+    def reject_request(
+        _: httpx.Request,
+    ) -> httpx.Response:
+        raise AssertionError("HTTP request must not be made")
+
+    transport = httpx.MockTransport(reject_request)
+
+    with httpx.Client(transport=transport) as client:
+        result = download_archive_with_metrics(
+            archive_hour=archive_hour,
+            raw_root=tmp_path,
+            client=client,
+        )
+
+    assert result == ArchiveDownloadResult(
+        path=archive_path,
+        downloaded=False,
+        retry_count=0,
+    )

@@ -1,13 +1,17 @@
 import asyncio
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
+from time import perf_counter
 
 import httpx
 from pyiceberg.table import Table
 
-from de_tech_radar.ingestion.gharchive import download_archive
+from de_tech_radar.ingestion.gharchive import (
+    ArchiveDownloadResult,
+    download_archive_with_metrics,
+)
 from de_tech_radar.pipelines.bronze_silver import (
     load_bronze_source_to_silver,
 )
@@ -26,6 +30,13 @@ class DailyPipelineResult:
     bronze_rows: int
     silver_rows: int
     gold_rows: int
+    downloaded_archive_count: int = 0
+    reused_archive_count: int = 0
+    download_retry_count: int = 0
+    download_duration_seconds: float = field(
+        default=0.0,
+        compare=False,
+    )
 
 
 def build_archive_hours(
@@ -50,7 +61,7 @@ async def download_archive_hours(
     raw_root: Path,
     client: httpx.Client,
     max_concurrency: int = 4,
-) -> tuple[Path, ...]:
+) -> tuple[ArchiveDownloadResult, ...]:
     """Download archive hours with bounded concurrency."""
     if max_concurrency < 1:
         raise ValueError("max_concurrency must be at least 1")
@@ -60,10 +71,10 @@ async def download_archive_hours(
 
     async def download_one(
         archive_hour: datetime,
-    ) -> Path:
+    ) -> ArchiveDownloadResult:
         async with semaphore:
             return await asyncio.to_thread(
-                download_archive,
+                download_archive_with_metrics,
                 archive_hour=archive_hour,
                 raw_root=raw_root,
                 client=client,
@@ -101,7 +112,8 @@ def run_archive_hours(
     bronze_rows = 0
     silver_rows = 0
 
-    archive_paths = asyncio.run(
+    download_started_at = perf_counter()
+    archive_results = asyncio.run(
         download_archive_hours(
             archive_hours=hours,
             raw_root=raw_root,
@@ -109,12 +121,15 @@ def run_archive_hours(
             max_concurrency=max_download_concurrency,
         )
     )
+    download_duration_seconds = perf_counter() - download_started_at
 
-    for archive_hour, archive_path in zip(
+    for archive_hour, archive_result in zip(
         hours,
-        archive_paths,
+        archive_results,
         strict=True,
     ):
+        archive_path = archive_result.path
+
         bronze_rows += load_archive_to_bronze(
             archive_path=archive_path,
             archive_hour=archive_hour,
@@ -138,6 +153,10 @@ def run_archive_hours(
         bronze_rows=bronze_rows,
         silver_rows=silver_rows,
         gold_rows=gold_rows,
+        downloaded_archive_count=sum(result.downloaded for result in archive_results),
+        reused_archive_count=sum(not result.downloaded for result in archive_results),
+        download_retry_count=sum(result.retry_count for result in archive_results),
+        download_duration_seconds=download_duration_seconds,
     )
 
 
