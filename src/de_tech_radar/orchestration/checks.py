@@ -1,6 +1,6 @@
 from collections import Counter
 from collections.abc import Iterable
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any, cast
 
 import dagster as dg
@@ -14,6 +14,7 @@ from de_tech_radar.gold.daily_activity import (
 from de_tech_radar.lakehouse.catalog import open_local_catalog
 from de_tech_radar.lakehouse.tables import (
     ensure_gold_daily_activity_table,
+    ensure_silver_events_table,
 )
 from de_tech_radar.orchestration.assets import (
     daily_technology_activity,
@@ -21,6 +22,55 @@ from de_tech_radar.orchestration.assets import (
 from de_tech_radar.orchestration.resources import RadarPaths
 
 GoldActivityKey = tuple[str, date]
+
+
+def find_missing_archive_hours(
+    *,
+    activity_date: date,
+    archive_hours: Iterable[datetime],
+) -> tuple[datetime, ...]:
+    """Return UTC archive hours missing from one activity date."""
+
+    present_hours = set(archive_hours)
+    expected_hours = (
+        datetime(
+            activity_date.year,
+            activity_date.month,
+            activity_date.day,
+            hour,
+            tzinfo=UTC,
+        )
+        for hour in range(24)
+    )
+
+    return tuple(
+        archive_hour for archive_hour in expected_hours if archive_hour not in present_hours
+    )
+
+
+def evaluate_complete_archive_hours(
+    *,
+    activity_date: date,
+    archive_hours: Iterable[datetime],
+) -> dg.AssetCheckResult:
+    """Check that a Silver date contains all 24 UTC hours."""
+
+    missing_hours = find_missing_archive_hours(
+        activity_date=activity_date,
+        archive_hours=archive_hours,
+    )
+
+    return dg.AssetCheckResult(
+        passed=not missing_hours,
+        metadata={
+            "expected_hour_count": 24,
+            "present_hour_count": 24 - len(missing_hours),
+            "missing_hour_count": len(missing_hours),
+            "missing_hours": dg.MetadataValue.json(
+                [archive_hour.isoformat() for archive_hour in missing_hours]
+            ),
+        },
+    )
 
 
 def evaluate_unique_gold_keys(
@@ -77,6 +127,31 @@ def _has_negative_metric(
     )
 
     return any(metric < 0 for metric in metrics)
+
+
+def load_silver_archive_hours(
+    *,
+    table: Table,
+    activity_date: date,
+) -> tuple[datetime, ...]:
+    """Read unique archive hours from one Silver date partition."""
+
+    table.refresh()
+
+    records = cast(
+        list[dict[str, Any]],
+        table.scan(
+            row_filter=EqualTo(
+                term=Reference("event_date"),
+                value=literal(activity_date),
+            ),
+            selected_fields=("archive_hour",),
+        )
+        .to_arrow()
+        .to_pylist(),
+    )
+
+    return tuple(sorted({cast(datetime, record["archive_hour"]) for record in records}))
 
 
 def load_gold_activity_keys(
@@ -170,6 +245,36 @@ def _has_invalid_metrics(
         or activity.merged_pull_request_count > activity.pull_request_count
         or any(count > activity.event_count for count in event_subtype_counts)
     )
+
+
+@dg.asset_check(
+    asset=daily_technology_activity,
+    name="complete_archive_hours",
+    description=("Each daily partition must contain all 24 UTC archive hours."),
+    blocking=True,
+)
+def complete_archive_hours(
+    context: dg.AssetCheckExecutionContext,
+    paths: RadarPaths,
+) -> dg.AssetCheckResult:
+    """Check Silver archive-hour coverage for one date."""
+
+    activity_date = date.fromisoformat(context.partition_key)
+
+    with open_local_catalog(
+        catalog_name="local",
+        catalog_path=paths.resolve(paths.catalog_path),
+        warehouse_path=paths.resolve(paths.warehouse_path),
+    ) as catalog:
+        table = ensure_silver_events_table(catalog)
+
+        return evaluate_complete_archive_hours(
+            activity_date=activity_date,
+            archive_hours=load_silver_archive_hours(
+                table=table,
+                activity_date=activity_date,
+            ),
+        )
 
 
 @dg.asset_check(

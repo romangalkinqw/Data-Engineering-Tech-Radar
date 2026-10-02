@@ -1,6 +1,7 @@
 import dagster as dg
 
 from de_tech_radar.orchestration.checks import (
+    complete_archive_hours,
     unique_gold_keys,
     valid_gold_metrics,
 )
@@ -43,3 +44,9 @@ def test_daily_job_includes_postgres_asset() -> None:
         dg.AssetKey("daily_technology_activity"),
         postgres_key,
     }
+
+
+def test_definitions_register_complete_archive_hours() -> None:
+    asset_graph = defs.resolve_asset_graph()
+
+    assert complete_archive_hours.check_key in asset_graph.asset_check_keys
